@@ -7,44 +7,38 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
         h1 { color: #111; margin-bottom: 5px; font-size: 28px; }
-        p.subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
-
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+        .main-grid, .meal-grid, .ad-grid { display: grid; gap: 15px; margin-bottom: 20px; }
+        .main-grid { grid-template-columns: 1fr 1fr; }
+        .meal-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ad-grid { grid-template-columns: 1fr 1fr; }
+        
         .btn { border: none; border-radius: 16px; cursor: pointer; transition: transform 0.1s; font-weight: bold; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .btn:active { transform: scale(0.96); }
-
         .btn-big { height: 140px; font-size: 24px; }
         .btn-attendance { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .btn-snack { background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%); }
-
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .btn-meal { height: 80px; font-size: 18px; background-color: #fff; color: #333; border: 2px solid #eee; }
         .btn-meal:hover { border-color: #333; background-color: #fafafa; }
-        .btn-disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; border: none; }
-
-        .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-meal:active { background-color: #e0e0e0; }
+        .btn-disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; }
         .btn-ad { height: 120px; background-size: cover; background-position: center; border-radius: 16px; border: 1px solid #ddd; }
         .btn-ad span { background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 10px; }
 
-        /* 모달 스타일 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 380px; text-align: left; animation: slideUp 0.3s; position: relative; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 380px; text-align: left; animation: slideUp 0.3s; }
         @keyframes slideUp { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-        
         .modal h2 { margin-top: 0; text-align: center; color: #333; margin-bottom: 15px; }
         .radio-group { display: flex; gap: 8px; margin-bottom: 25px; }
         .radio-item { flex: 1; }
         .radio-item input { display: none; }
         .radio-item label { display: flex; align-items: center; justify-content: center; height: 55px; background: #f8f9fa; border-radius: 12px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; border: 2px solid #eee; transition: 0.2s; white-space: nowrap; }
         .radio-item input:checked + label { background: #e3f2fd; border-color: #2196F3; color: #1976D2; }
-
         .input-group { margin-bottom: 12px; }
         .input-group input { width: 90%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; background: #f9f9f9; }
         .btn-confirm { width: 100%; background: #333; color: white; padding: 16px; border: none; border-radius: 12px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .close-btn { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; color: #999; }
-        
         .top-link { text-align: right; margin-bottom: 15px; }
         .top-link a { text-decoration: none; color: #888; font-size: 13px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 15px; }
     </style>
@@ -113,7 +107,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 광고 설정
     const AD_CONFIG = {
         ad1: { image: "https://via.placeholder.com/300x150/333/fff?text=Notice", link: "https://www.google.com" },
         ad2: { image: "https://via.placeholder.com/300x150/FF9800/fff?text=Event", link: "https://www.naver.com" }
@@ -137,12 +130,20 @@
     let currentType = ""; 
     let currentTargetName = "";
 
+    // 한국 시간 오늘 날짜 구하기
+    const getTodayStr = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     window.openCombinedModal = (type, targetName = "") => {
         currentType = type;
         currentTargetName = targetName;
         document.getElementById('loginId').value = '';
         document.getElementById('loginPw').value = '';
-        
         const title = document.getElementById('modalTitle');
         if(type === 'attendance') title.innerText = "출석 체크";
         else if(type === 'meal') title.innerText = `[${targetName}] 식사 신청`;
@@ -168,7 +169,7 @@
             const userDoc = snapshot.docs[0];
             const userId = userDoc.id;
             const userData = userDoc.data();
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayStr();
 
             let collectionName = "";
             let dataPayload = { student_id: userId, student_name: userData.name, activity: selectedAct, date: today, timestamp: Timestamp.now() };
@@ -178,15 +179,25 @@
                 collectionName = "attendance";
                 msg = `${userData.name}님, [${selectedAct}] 출석 완료!`;
             } else if(currentType === 'meal') {
-                // 이미 신청했는지 확인
+                // [수정] 오늘 이미 "진행 중(신청/승인)"인 건이 있는지 확인 (완료된 건은 무시 = 중복 허용)
                 const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
                 const checkSnap = await getDocs(checkQ);
-                if(!checkSnap.empty) return alert("이미 오늘 급식을 신청하셨습니다.");
+                
+                let isBlocked = false;
+                checkSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.status === 'applied' || d.status === 'approved') {
+                        isBlocked = true;
+                    }
+                });
+
+                if(isBlocked) return alert("현재 진행 중인 식사 신청이 있습니다.\n(아직 식당 결제를 안 하셨습니다)");
 
                 collectionName = "meal_applications";
                 dataPayload.store_name = currentTargetName;
                 dataPayload.status = "applied"; // 신청 완료 상태
                 msg = `${userData.name}님, [${currentTargetName}] 신청 완료!\n식당에 가서 QR코드를 찍어주세요.`;
+
             } else if(currentType === 'snack') {
                 collectionName = "snacks";
                 dataPayload.item = "간식 세트";
@@ -202,7 +213,21 @@
 
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
     window.openRegisterModal = () => document.getElementById('registerModal').style.display = 'flex';
-    window.registerUser = async () => { /* (회원가입 로직 기존과 동일) */ };
+    window.registerUser = async () => { /* 회원가입 로직 유지 (생략) */ 
+        const name = document.getElementById('regName').value;
+        const birth = document.getElementById('regBirth').value;
+        const pw = document.getElementById('regPw').value;
+        const pwConfirm = document.getElementById('regPwConfirm').value;
+        if(!name || birth.length !== 6 || !pw) return alert("정보 확인");
+        if(pw !== pwConfirm) return alert("비번 불일치");
+        try {
+            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
+            const snap = await getDocs(q);
+            if(!snap.empty) return alert("이미 가입됨");
+            await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
+            alert("가입 완료"); closeModal('registerModal');
+        } catch(e) { alert("오류"); }
+    };
 </script>
 </body>
 </html>
