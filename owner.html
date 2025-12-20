@@ -3,41 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>식당 장부 확인</title>
+    <title>식당 외상 장부</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f9f9f9; padding: 20px; max-width: 600px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 20px; }
-        .store-name { font-size: 24px; font-weight: bold; color: #333; }
-        .date { color: #666; font-size: 14px; margin-top: 5px; }
+        .store-name { font-size: 26px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 14px; }
         
+        /* 합계 박스 (빨간색 강조) */
+        .total-box { background: #d32f2f; color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3); }
+        .total-label { font-size: 15px; opacity: 0.9; margin-bottom: 5px; }
+        .total-amount { font-size: 36px; font-weight: bold; }
+
         .list-box { background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        .list-header { background: #eee; padding: 10px 20px; font-weight: bold; color: #555; font-size: 13px; display: flex; justify-content: space-between; }
+        
         .list-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #eee; align-items: center; }
         .list-item:last-child { border-bottom: none; }
         
-        .user-info { font-weight: bold; font-size: 16px; }
-        .time { font-size: 12px; color: #999; margin-top: 2px; }
-        .amount { font-size: 18px; font-weight: bold; color: #2196F3; }
-        .pending { color: #aaa; font-size: 14px; }
-
-        .total-box { background: #333; color: white; padding: 20px; border-radius: 15px; margin-top: 20px; text-align: center; }
-        .total-label { font-size: 14px; opacity: 0.8; }
-        .total-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
+        .info-group { display: flex; flex-direction: column; }
+        .date { font-size: 12px; color: #888; margin-bottom: 2px; }
+        .user { font-weight: bold; font-size: 16px; color: #333; }
+        .amount { font-size: 18px; font-weight: bold; color: #d32f2f; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="store-name" id="storeName">가게 이름 로딩 중...</div>
-    <div class="date" id="todayDate">2025-00-00</div>
-</div>
-
-<div class="list-box" id="listBox">
-    <div style="padding:20px; text-align:center; color:#999;">불러오는 중...</div>
+    <div class="store-name" id="storeName">가게 이름</div>
+    <div class="subtitle">현재 미정산(외상) 장부입니다.</div>
 </div>
 
 <div class="total-box">
-    <div class="total-label">오늘 매출 합계</div>
+    <div class="total-label">받아야 할 외상값 합계</div>
     <div class="total-amount" id="totalAmount">0원</div>
+</div>
+
+<div class="list-box">
+    <div class="list-header">
+        <span>날짜 / 학생명</span>
+        <span>금액</span>
+    </div>
+    <div id="listBox">
+        <div style="padding:30px; text-align:center; color:#999;">로딩 중...</div>
+    </div>
 </div>
 
 <script type="module">
@@ -55,40 +64,44 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // URL에서 가게 이름 가져오기 (?store=달인보쌈)
     const urlParams = new URLSearchParams(window.location.search);
     const myStore = urlParams.get('store');
 
     window.onload = async () => {
         if(!myStore) {
-            document.body.innerHTML = "<h2 style='text-align:center'>잘못된 접근입니다.<br>QR코드를 다시 찍어주세요.</h2>";
+            document.body.innerHTML = "<h3 style='text-align:center; margin-top:50px;'>QR코드를 다시 찍어주세요.</h3>";
             return;
         }
-
         document.getElementById('storeName').innerText = myStore;
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('todayDate').innerText = today;
 
-        // DB 조회
-        const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("date", "==", today));
+        // DB 조회: 해당 식당의 '완료된 결제(completed)' 중
+        const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("status", "==", "completed"));
         const snap = await getDocs(q);
 
-        const listBox = document.getElementById('listBox');
-        listBox.innerHTML = "";
-        
         let total = 0;
         let list = [];
 
         snap.forEach(doc => {
             const d = doc.data();
-            list.push(d);
+            // [중요] 'is_settled'(정산완료여부)가 true가 아닌 것만 가져옴 (=미정산)
+            if(d.is_settled !== true) {
+                list.push(d);
+                total += Number(d.amount);
+            }
         });
 
-        // 시간순 정렬 (최신이 위로)
-        list.sort((a,b) => b.timestamp - a.timestamp);
+        // 날짜 내림차순 정렬 (최신순) -> 같은 날짜면 시간순
+        list.sort((a,b) => {
+            if(a.date !== b.date) return b.date.localeCompare(a.date);
+            return b.timestamp - a.timestamp;
+        });
+
+        const listBox = document.getElementById('listBox');
+        listBox.innerHTML = "";
 
         if(list.length === 0) {
-            listBox.innerHTML = "<div style='padding:20px; text-align:center; color:#999;'>오늘 아직 손님이 없네요!</div>";
+            listBox.innerHTML = "<div style='padding:30px; text-align:center; color:#999;'>모든 금액이 정산되었습니다!<br>(미정산 내역 없음)</div>";
+            document.getElementById('totalAmount').innerText = "0원";
             return;
         }
 
@@ -97,25 +110,14 @@
             const maskedName = item.student_name.length > 2 
                 ? item.student_name[0] + "*" + item.student_name.substring(2)
                 : item.student_name[0] + "*";
-            
-            // 시간 포맷
-            const time = item.used_at ? new Date(item.used_at.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-
-            let amountDisplay = "";
-            if(item.status === 'completed') {
-                total += Number(item.amount);
-                amountDisplay = `<div class="amount">${Number(item.amount).toLocaleString()}원</div>`;
-            } else {
-                amountDisplay = `<div class="pending">식사 중</div>`;
-            }
 
             listBox.innerHTML += `
                 <div class="list-item">
-                    <div>
-                        <div class="user-info">${maskedName}</div>
-                        <div class="time">${time}</div>
+                    <div class="info-group">
+                        <span class="date">${item.date}</span>
+                        <span class="user">${maskedName}</span>
                     </div>
-                    ${amountDisplay}
+                    <div class="amount">${Number(item.amount).toLocaleString()}원</div>
                 </div>
             `;
         });
@@ -123,6 +125,5 @@
         document.getElementById('totalAmount').innerText = total.toLocaleString() + "원";
     };
 </script>
-
 </body>
 </html>
