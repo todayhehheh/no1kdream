@@ -117,14 +117,16 @@
         const birth = idMatch[2];
 
         try {
+            // A. 유저 확인
             const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
             const snapshot = await getDocs(q);
             if(snapshot.empty) return alert("회원 정보가 틀립니다.");
             
             currentUser = snapshot.docs[0].data();
             const userId = snapshot.docs[0].id;
-            const today = getTodayStr(); // 한국 시간 적용
+            const today = getTodayStr();
 
+            // B. 급식 신청 내역 확인 (오늘 날짜 전체 조회)
             const appQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
             const appSnap = await getDocs(appQ);
 
@@ -133,16 +135,29 @@
                 return;
             }
 
-            const appData = appSnap.docs[0].data();
-            applicationDocId = appSnap.docs[0].id;
+            // [핵심 수정] 모든 신청 내역 중 '유효한(승인된)' 것이 있는지 찾음
+            // 이전에 완료(completed)된 건은 무시하고, 새로 approved된 건을 찾아야 함.
+            const apps = appSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // 1. 진행 가능한(applied, approved) 건 찾기
+            const activeApp = apps.find(a => a.status === 'applied' || a.status === 'approved');
 
-            if(appData.status === 'applied' || appData.status === 'approved') {
+            if (activeApp) {
+                // [추가] 식당 일치 여부 확인 (Strict Check)
+                if (activeApp.store_name !== storeName) {
+                    alert(`⛔ 식당 불일치\n\n[${activeApp.store_name}]으로 신청/승인되었습니다.\n여기는 [${storeName}]입니다.\n\n(선생님께 변경을 요청하세요)`);
+                    return;
+                }
+
+                // 성공: 대상 문서 ID 저장 및 화면 전환
+                applicationDocId = activeApp.id;
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('amountSection').style.display = 'block';
-            } else if (appData.status === 'completed') {
-                alert("이미 식사를 완료하셨습니다.");
+
             } else {
-                alert("이용할 수 없는 상태입니다.");
+                // 진행 가능한 건이 없다면 -> 이미 다 먹었는지 확인
+                // (오늘 날짜 기록은 있는데 active한 게 없다는 뜻)
+                alert("⛔ 결제 불가\n\n이미 식사를 완료하셨거나, 승인된 내역이 없습니다.\n추가 식사는 선생님께 재승인을 요청하세요.");
             }
 
         } catch(e) { console.error(e); alert("오류 발생"); }
@@ -152,7 +167,6 @@
         const amount = document.getElementById('payAmount').value;
         if(!amount) return alert("금액을 입력해주세요.");
         
-        // [수정] 금액 제한 로직 추가
         if(Number(amount) > 10000) {
             alert("최대 10,000원까지만 결제 가능합니다.");
             return;
@@ -160,6 +174,7 @@
         if(Number(amount) < 1000) return alert("올바른 금액을 입력해주세요.");
 
         try {
+            // DB 업데이트
             await updateDoc(doc(db, "meal_applications", applicationDocId), {
                 amount: Number(amount),
                 status: 'completed',
