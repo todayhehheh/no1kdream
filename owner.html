@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식당 장부 확인</title>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #f9f9f9; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .store-name { font-size: 24px; font-weight: bold; color: #333; }
+        .date { color: #666; font-size: 14px; margin-top: 5px; }
+        
+        .list-box { background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        .list-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #eee; align-items: center; }
+        .list-item:last-child { border-bottom: none; }
+        
+        .user-info { font-weight: bold; font-size: 16px; }
+        .time { font-size: 12px; color: #999; margin-top: 2px; }
+        .amount { font-size: 18px; font-weight: bold; color: #2196F3; }
+        .pending { color: #aaa; font-size: 14px; }
+
+        .total-box { background: #333; color: white; padding: 20px; border-radius: 15px; margin-top: 20px; text-align: center; }
+        .total-label { font-size: 14px; opacity: 0.8; }
+        .total-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="store-name" id="storeName">가게 이름 로딩 중...</div>
+    <div class="date" id="todayDate">2025-00-00</div>
+</div>
+
+<div class="list-box" id="listBox">
+    <div style="padding:20px; text-align:center; color:#999;">불러오는 중...</div>
+</div>
+
+<div class="total-box">
+    <div class="total-label">오늘 매출 합계</div>
+    <div class="total-amount" id="totalAmount">0원</div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
+      authDomain: "dream-meal-support.firebaseapp.com",
+      projectId: "dream-meal-support",
+      storageBucket: "dream-meal-support.firebasestorage.app",
+      messagingSenderId: "230720243044",
+      appId: "1:230720243044:web:eb38ecc28353a1c70aa671"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // URL에서 가게 이름 가져오기 (?store=달인보쌈)
+    const urlParams = new URLSearchParams(window.location.search);
+    const myStore = urlParams.get('store');
+
+    window.onload = async () => {
+        if(!myStore) {
+            document.body.innerHTML = "<h2 style='text-align:center'>잘못된 접근입니다.<br>QR코드를 다시 찍어주세요.</h2>";
+            return;
+        }
+
+        document.getElementById('storeName').innerText = myStore;
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('todayDate').innerText = today;
+
+        // DB 조회
+        const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("date", "==", today));
+        const snap = await getDocs(q);
+
+        const listBox = document.getElementById('listBox');
+        listBox.innerHTML = "";
+        
+        let total = 0;
+        let list = [];
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            list.push(d);
+        });
+
+        // 시간순 정렬 (최신이 위로)
+        list.sort((a,b) => b.timestamp - a.timestamp);
+
+        if(list.length === 0) {
+            listBox.innerHTML = "<div style='padding:20px; text-align:center; color:#999;'>오늘 아직 손님이 없네요!</div>";
+            return;
+        }
+
+        list.forEach(item => {
+            // 이름 마스킹 (김시언 -> 김*언)
+            const maskedName = item.student_name.length > 2 
+                ? item.student_name[0] + "*" + item.student_name.substring(2)
+                : item.student_name[0] + "*";
+            
+            // 시간 포맷
+            const time = item.used_at ? new Date(item.used_at.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
+
+            let amountDisplay = "";
+            if(item.status === 'completed') {
+                total += Number(item.amount);
+                amountDisplay = `<div class="amount">${Number(item.amount).toLocaleString()}원</div>`;
+            } else {
+                amountDisplay = `<div class="pending">식사 중</div>`;
+            }
+
+            listBox.innerHTML += `
+                <div class="list-item">
+                    <div>
+                        <div class="user-info">${maskedName}</div>
+                        <div class="time">${time}</div>
+                    </div>
+                    ${amountDisplay}
+                </div>
+            `;
+        });
+
+        document.getElementById('totalAmount').innerText = total.toLocaleString() + "원";
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>꿈드림 통합 관제탑</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 { color: #333; display: flex; justify-content: space-between; align-items: center; }
+        .refresh-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+
+        /* 탭 메뉴 */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
+        .tab-btn { padding: 12px 25px; border: none; background: #eee; border-radius: 20px; cursor: pointer; font-weight: bold; color: #666; font-size: 15px; transition: 0.2s; }
+        .tab-btn.active { background: #333; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+
+        /* 테이블 박스 */
+        .table-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; vertical-align: middle; }
+        th { background-color: #f1f3f5; color: #333; font-weight: bold; }
+        tr:hover { background-color: #f9f9f9; }
+        
+        /* 버튼 스타일 */
+        .btn-small { padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; background: white; font-size: 13px; font-weight: bold; margin: 0 2px; }
+        .btn-blue { background: #2196F3; color: white; border: none; }
+        .btn-red { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; }
+        .btn-green { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .btn-excel { background: #217346; color: white; border: none; }
+        .btn-pdf { background: #b71c1c; color: white; border: none; }
+        
+        /* 식당 토글 버튼 */
+        .store-toggles { display: flex; gap: 4px; justify-content: center; }
+        .toggle-btn { padding: 6px 8px; border: 1px solid #ddd; background: #f9f9f9; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .toggle-btn.active-dalin { background: #fff8e1; color: #ff6f00; border-color: #ffca28; }
+        .toggle-btn.active-mystery { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
+        .toggle-btn.active-yeon { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+
+        /* 필터 바 */
+        .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; background: #fafafa; padding: 15px; border-radius: 8px; }
+        input[type="date"], select, input[type="text"] { padding: 8px; border-radius: 6px; border: 1px solid #ddd; }
+        
+        /* 화면 표시용 정산 요약 */
+        .summary-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-around; font-weight: bold; color: #0D47A1; }
+
+        /* ========================================= */
+        /* PDF 출력용 스타일 (화면엔 안 보임) */
+        /* ========================================= */
+        #hidden-print-zone {
+            position: absolute; top: -9999px; left: -9999px;
+            width: 210mm; /* A4 너비 */
+            background: white; padding: 20mm; box-sizing: border-box;
+        }
+        .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .report-title { font-size: 24px; font-weight: bold; color: #000; margin: 0 0 10px 0; }
+        .report-info { font-size: 14px; color: #555; margin-bottom: 20px; }
+        .report-summary { 
+            border: 2px solid #333; background: #f8f9fa; padding: 15px; margin-bottom: 20px; 
+            display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; 
+        }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .report-table th, .report-table td { border: 1px solid #999; padding: 8px; text-align: center; }
+        .report-table th { background: #eee; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        <span>📋 꿈드림 통합 관제탑</span>
+        <button class="refresh-btn" onclick="location.reload()">🔄 새로고침</button>
+    </h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('users')">1. 전체 청소년 & 급식관리</button>
+        <button class="tab-btn" onclick="switchTab('settlement')">2. 정산 관리</button>
+        <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록 (출석부)</button>
+    </div>
+
+    <div id="tab-users" class="table-box">
+        <div style="margin-bottom: 10px; color:#555; font-size:14px;">
+            📢 <strong>오늘({today})</strong> 기준 전체 학생 리스트 (이름순 정렬)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th width="15%">이름 (생년월일)</th>
+                    <th width="10%">오늘 상태</th>
+                    <th width="35%">급식 승인 / 변경</th>
+                    <th width="25%">계정 관리</th>
+                    <th width="10%">삭제</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr><td colspan="5">데이터 로딩 중...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="tab-settlement" class="table-box" style="display:none;">
+        <div class="filter-bar">
+            <label>기간:</label>
+            <input type="date" id="settleStart"> ~ <input type="date" id="settleEnd">
+            <label>업체:</label>
+            <select id="settleStore">
+                <option value="all">전체 업체</option>
+                <option value="달인보쌈">달인보쌈</option>
+                <option value="미스테리분식">미스테리분식</option>
+                <option value="연김밥">연김밥</option>
+            </select>
+            <button class="btn-small btn-blue" onclick="loadSettlementData()">조회</button>
+            <button class="btn-small btn-excel" onclick="downloadTableAsExcel('settleTable', '정산내역')">엑셀</button>
+            <button class="btn-small btn-pdf" onclick="generateSettlementPDF()">📄 정산서 PDF 출력</button>
+        </div>
+
+        <div class="summary-box">
+            <span>총 건수: <span id="sumCount">0</span>건</span>
+            <span>총 금액: <span id="sumPrice">0</span>원</span>
+            <span style="color:#d32f2f">미정산: <span id="sumUnpaid">0</span>원</span>
+        </div>
+
+        <table id="settleTable">
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>이름 (생년월일)</th>
+                    <th>업체명</th>
+                    <th>금액</th>
+                    <th>정산 상태</th>
+                </tr>
+            </thead>
+            <tbody id="settleBody">
+                <tr><td colspan="5">조회 버튼을 눌러주세요.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="tab-records" class="table-box" style="display:none;">
+        <div class="filter-bar">
+            <label>기간:</label>
+            <input type="date" id="recStart"> ~ <input type="date" id="recEnd">
+            <label>활동선택:</label>
+            <select id="recActivity" style="width: 150px;">
+                <option value="">전체 보기</option>
+                <option value="기초소양교육">기초소양교육</option>
+                <option value="프로그램">프로그램</option>
+                <option value="스터디카페">스터디카페</option>
+            </select>
+            
+            <button class="btn-small btn-blue" onclick="loadRecords()">조회</button>
+            <button class="btn-small btn-excel" onclick="downloadTableAsExcel('recordTable', '통합활동기록')">엑셀</button>
+            <button class="btn-small btn-pdf" onclick="generateRecordPDF()">📄 기록부 PDF 출력</button>
+        </div>
+
+        <div style="font-size:13px; color:#666; margin-bottom:10px;">
+            ℹ️ <strong>1일 1인 1행 원칙:</strong> 출석 > 급식 > 부식 순서로 우선순위가 높은 활동 하나만 표시됩니다.
+        </div>
+
+        <table id="recordTable">
+            <thead>
+                <tr>
+                    <th>이름 (생년월일)</th>
+                    <th>출석 일자</th>
+                    <th>대표 활동 내용</th>
+                </tr>
+            </thead>
+            <tbody id="recBody">
+                <tr><td colspan="3">조회 버튼을 눌러주세요.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div id="hidden-print-zone"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
+      authDomain: "dream-meal-support.firebaseapp.com",
+      projectId: "dream-meal-support",
+      storageBucket: "dream-meal-support.firebasestorage.app",
+      messagingSenderId: "230720243044",
+      appId: "1:230720243044:web:eb38ecc28353a1c70aa671"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const ADMIN_PW = "1388"; 
+
+    // --- 초기화 ---
+    window.onload = async () => {
+        const inputPw = prompt("관리자 비밀번호를 입력하세요:");
+        if(inputPw !== ADMIN_PW) { 
+            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>⛔ 접근 권한이 없습니다.</h2>"; 
+            return; 
+        }
+
+        const today = new Date();
+        const monthAgo = new Date();
+        monthAgo.setMonth(today.getMonth() - 1);
+        const todayStr = today.toISOString().split('T')[0];
+        const monthAgoStr = monthAgo.toISOString().split('T')[0];
+
+        document.body.innerHTML = document.body.innerHTML.replace("{today}", todayStr);
+        document.getElementById('settleStart').value = monthAgoStr;
+        document.getElementById('settleEnd').value = todayStr;
+        document.getElementById('recStart').value = monthAgoStr;
+        document.getElementById('recEnd').value = todayStr;
+
+        loadAllUsersAndApps(); 
+    };
+
+    // [TAB 1 로직 생략 - 기존과 동일] 
+    // ... (지면 관계상 중복되는 loadAllUsersAndApps 등은 그대로 두었다고 가정하고, 핵심인 PDF 부분만 변경합니다) ...
+    // 실제 사용 시엔 이전에 짠 코드의 TAB 1 로직을 여기에 그대로 두시면 됩니다.
+    // 편의를 위해 다시 적어드립니다.
+
+    window.loadAllUsersAndApps = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = "<tr><td colspan='5'>데이터 불러오는 중...</td></tr>";
+
+        try {
+            const userSnap = await getDocs(query(collection(db, "users"), orderBy("name")));
+            const appSnap = await getDocs(query(collection(db, "meal_applications"), where("date", "==", today)));
+            
+            let appsMap = {};
+            appSnap.forEach(doc => { const d = doc.data(); appsMap[d.student_id] = { docId: doc.id, ...d }; });
+
+            tbody.innerHTML = "";
+            if(userSnap.empty) { tbody.innerHTML = "<tr><td colspan='5'>가입된 회원이 없습니다.</td></tr>"; return; }
+
+            userSnap.forEach(userDoc => {
+                const u = userDoc.data();
+                const userId = userDoc.id;
+                const app = appsMap[userId];
+                
+                const store = app ? app.store_name : null;
+                const statusText = store ? `<span style="color:#2196F3; font-weight:bold">${store}</span>` : `<span style="color:#aaa">미신청</span>`;
+                const cD = store === '달인보쌈' ? 'active-dalin' : '';
+                const cM = store === '미스테리분식' ? 'active-mystery' : '';
+                const cY = store === '연김밥' ? 'active-yeon' : '';
+                const btnAttr = app ? '' : 'disabled style="opacity:0.3; cursor:not-allowed;"';
+                const appId = app ? app.docId : '';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td>
+                        <td>${statusText}</td>
+                        <td><div class="store-toggles">
+                            <button class="toggle-btn ${cD}" ${btnAttr} onclick="changeStore('${appId}', '달인보쌈')">달인</button>
+                            <button class="toggle-btn ${cM}" ${btnAttr} onclick="changeStore('${appId}', '미스테리분식')">미스테리</button>
+                            <button class="toggle-btn ${cY}" ${btnAttr} onclick="changeStore('${appId}', '연김밥')">연김밥</button>
+                        </div></td>
+                        <td><button class="btn-small" onclick="viewPw('${u.password}')">비번확인</button>
+                            <button class="btn-small btn-blue" onclick="changePw('${userId}', '${u.name}')">변경</button></td>
+                        <td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td>
+                    </tr>`;
+            });
+        } catch(e) { console.error(e); }
+    };
+    window.changeStore = async (docId, newStore) => { if(!docId || !confirm("변경하시겠습니까?")) return; await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" }); loadAllUsersAndApps(); };
+    window.viewPw = (pw) => alert(`비밀번호: ${pw}`);
+    window.changePw = async (userId, name) => { const np = prompt("새 비밀번호:"); if(np) { await updateDoc(doc(db, "users", userId), { password: np }); alert("변경완료"); } };
+    window.deleteUser = async (userId, name) => { if(prompt("관리자 암호(1388):") === ADMIN_PW && confirm("삭제합니까?")) { await deleteDoc(doc(db, "users", userId)); alert("삭제완료"); loadAllUsersAndApps(); }};
+
+
+    // --- TAB 2: 정산 관리 로직 ---
+    window.loadSettlementData = async () => {
+        const start = document.getElementById('settleStart').value;
+        const end = document.getElementById('settleEnd').value;
+        const targetStore = document.getElementById('settleStore').value;
+        const tbody = document.getElementById('settleBody');
+        tbody.innerHTML = "<tr><td colspan='5'>조회 중...</td></tr>";
+
+        let userMap = {};
+        const uSnap = await getDocs(collection(db, "users"));
+        uSnap.forEach(d => userMap[d.id] = d.data());
+
+        const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
+        let list = [];
+        let totalCnt = 0, totalPrice = 0, totalUnpaid = 0;
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            if(d.date < start || d.date > end) return;
+            if(targetStore !== 'all' && d.store_name !== targetStore) return;
+            const price = d.amount ? Number(d.amount) : 0;
+            if(price === 0) return; 
+
+            const u = userMap[d.student_id] || {name: d.student_name, birth: ''};
+            const isSettled = d.is_settled === true;
+            totalCnt++; totalPrice += price; if(!isSettled) totalUnpaid += price;
+
+            list.push({ id: doc.id, ...d, price, isSettled, uName: u.name, uBirth: u.birth });
+        });
+
+        document.getElementById('sumCount').innerText = totalCnt;
+        document.getElementById('sumPrice').innerText = totalPrice.toLocaleString();
+        document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString();
+
+        tbody.innerHTML = "";
+        if(list.length === 0) { tbody.innerHTML = "<tr><td colspan='5'>내역이 없습니다.</td></tr>"; return; }
+
+        list.forEach(item => {
+            const statusHtml = item.isSettled ? `<span class="btn-green btn-small" onclick="toggleSettle('${item.id}', false)">✅ 완료</span>` : `<span class="btn-red btn-small" onclick="toggleSettle('${item.id}', true)">❌ 미정산</span>`;
+            tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.uName} (${item.uBirth})</td><td>${item.store_name}</td><td>${item.price.toLocaleString()}원</td><td>${statusHtml}</td></tr>`;
+        });
+    };
+    window.toggleSettle = async (id, state) => { if(confirm(state ? "정산 완료?" : "미정산 변경?")) { await updateDoc(doc(db, "meal_applications", id), { is_settled: state }); loadSettlementData(); }};
+
+
+    // --- TAB 3: 통합 기록 로직 ---
+    window.loadRecords = async () => {
+        const start = document.getElementById('recStart').value;
+        const end = document.getElementById('recEnd').value;
+        const selectedActivity = document.getElementById('recActivity').value;
+        const tbody = document.getElementById('recBody');
+        tbody.innerHTML = "<tr><td colspan='3'>처리 중...</td></tr>";
+
+        let userMap = {};
+        const uSnap = await getDocs(collection(db, "users"));
+        uSnap.forEach(d => userMap[d.id] = d.data());
+
+        let dailyRecordMap = {}; 
+        const process = (doc, type, priority) => {
+            const d = doc.data();
+            if(d.date < start || d.date > end) return;
+            const u = userMap[d.student_id] || {name: d.student_name, birth: ''};
+            let act = d.activity || (type === 'meal' ? d.store_name+"(식사)" : "간식");
+            if(selectedActivity && act !== selectedActivity) return;
+            const key = `${d.date}_${d.student_id}`;
+            if (!dailyRecordMap[key] || dailyRecordMap[key].priority < priority) {
+                dailyRecordMap[key] = { priority: priority, date: d.date, name: `${u.name} (${u.birth})`, activity: act, sortName: u.name };
+            }
+        };
+
+        const attSnap = await getDocs(query(collection(db, "attendance"), orderBy("date", "desc")));
+        attSnap.forEach(doc => process(doc, "attendance", 3));
+        const mealSnap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
+        mealSnap.forEach(doc => process(doc, "meal", 2));
+        const snackSnap = await getDocs(query(collection(db, "snacks"), orderBy("date", "desc")));
+        snackSnap.forEach(doc => process(doc, "snack", 1));
+
+        let finalRecords = Object.values(dailyRecordMap);
+        finalRecords.sort((a, b) => b.date.localeCompare(a.date) || a.sortName.localeCompare(b.sortName));
+
+        tbody.innerHTML = "";
+        if(finalRecords.length === 0) { tbody.innerHTML = "<tr><td colspan='3'>기록 없음</td></tr>"; return; }
+        finalRecords.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.activity}</td></tr>`);
+    };
+
+
+    // ============================================================
+    // ✨ 핵심: PDF 생성 기능 (정산서 & 기록부)
+    // ============================================================
+    
+    // 1. 정산 내역서 PDF
+    window.generateSettlementPDF = () => {
+        const zone = document.getElementById('hidden-print-zone');
+        const start = document.getElementById('settleStart').value;
+        const end = document.getElementById('settleEnd').value;
+        const store = document.getElementById('settleStore').options[document.getElementById('settleStore').selectedIndex].text;
+        
+        // 요약 정보 가져오기
+        const count = document.getElementById('sumCount').innerText;
+        const price = document.getElementById('sumPrice').innerText;
+        const unpaid = document.getElementById('sumUnpaid').innerText;
+
+        // 원본 테이블 가져오기
+        const originalTable = document.getElementById('settleTable').cloneNode(true);
+        // 테이블 스타일 강제 적용 (PDF용)
+        originalTable.className = "report-table";
+
+        // HTML 구성
+        zone.innerHTML = `
+            <div class="report-header">
+                <h1 class="report-title">급식 정산 내역서</h1>
+                <div class="report-info">
+                    조회 기간: ${start} ~ ${end} <br>
+                    대상 업체: ${store}
+                </div>
+            </div>
+            <div class="report-summary">
+                <div>총 신청: ${count}건</div>
+                <div>총 합계: ${price}원</div>
+                <div style="color:red">미정산 잔액: ${unpaid}원</div>
+            </div>
+        `;
+        zone.appendChild(originalTable);
+
+        // PDF 변환 실행
+        downloadPDFFromElement(zone, `정산내역서_${start}_${store}`);
+    };
+
+    // 2. 통합 활동 기록부 PDF
+    window.generateRecordPDF = () => {
+        const zone = document.getElementById('hidden-print-zone');
+        const start = document.getElementById('recStart').value;
+        const end = document.getElementById('recEnd').value;
+        const act = document.getElementById('recActivity').value || "전체 활동";
+
+        const originalTable = document.getElementById('recordTable').cloneNode(true);
+        originalTable.className = "report-table";
+
+        zone.innerHTML = `
+            <div class="report-header">
+                <h1 class="report-title">청소년 통합 활동 기록부</h1>
+                <div class="report-info">
+                    조회 기간: ${start} ~ ${end} <br>
+                    선택 활동: ${act}
+                </div>
+            </div>
+        `;
+        zone.appendChild(originalTable);
+
+        downloadPDFFromElement(zone, `활동기록부_${start}`);
+    };
+
+    // 공통 PDF 다운로드 로직
+    function downloadPDFFromElement(element, fileName) {
+        html2canvas(element, { scale: 2 }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210; // A4 너비
+            const pageHeight = 297; 
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save(fileName + ".pdf");
+            // 내용 비우기 (메모리 절약)
+            element.innerHTML = "";
+        });
+    }
+
+    window.switchTab = (tabName) => {
+        document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).style.display = 'block';
+        event.target.classList.add('active');
+        if(tabName === 'users') loadAllUsersAndApps();
+    };
+
+    window.downloadTableAsExcel = (id, name) => {
+        const wb = XLSX.utils.table_to_book(document.getElementById(id));
+        XLSX.writeFile(wb, name + ".xlsx");
+    };
+</script>
+
+</body>
+</html>

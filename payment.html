@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식사 결제 및 인증</title>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .store-badge { background: #E3F2FD; color: #2196F3; font-weight: bold; padding: 8px 15px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
+        h1 { margin: 0 0 20px 0; font-size: 26px; color: #333; }
+        
+        /* 입력창 스타일 */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 95%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; background: #fafafa; }
+        .input-group input:focus { border-color: #2196F3; background: #fff; }
+
+        .btn-confirm { width: 100%; background: #333; color: white; padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* 금액 입력 화면 (숨김) */
+        #amountSection { display: none; border-top: 2px solid #eee; margin-top: 20px; padding-top: 20px; animation: slideDown 0.3s; }
+        @keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
+        
+        #amountInput { font-size: 32px; text-align: center; color: #2196F3; font-weight: bold; letter-spacing: 1px; }
+
+        /* 식권 (티켓) 스타일 */
+        #ticketView { display: none; }
+        .ticket-box {
+            background: linear-gradient(45deg, #2196F3, #21CBF3, #2196F3);
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+            color: white; padding: 30px 20px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 30px rgba(33, 150, 243, 0.4); margin-top: 20px;
+        }
+        @keyframes gradientMove { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+        .ticket-amount { font-size: 40px; font-weight: bold; margin: 15px 0; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .ticket-time { font-size: 16px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-family: monospace; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="loginView">
+    <div class="store-badge" id="displayStore">식당 이름</div>
+    <h1>청소년 인증 및 결제</h1>
+    
+    <div id="loginSection">
+        <div class="input-group">
+            <label>아이디 (이름+생년월일)</label>
+            <input type="text" id="loginId" placeholder="예: 박드림081212">
+        </div>
+        <div class="input-group">
+            <label>비밀번호</label>
+            <input type="password" id="loginPw" placeholder="비밀번호">
+        </div>
+        <button class="btn-confirm" onclick="verifyUser()">인증하기</button>
+    </div>
+
+    <div id="amountSection">
+        <p style="color:#2196F3; font-weight:bold; font-size:18px;">✅ 인증되었습니다!</p>
+        <p style="color:#666; margin-bottom:15px;">식사 후 결제할 금액을 입력하세요.</p>
+        <div class="input-group">
+            <input type="number" id="payAmount" placeholder="금액 (예: 8000)" id="amountInput">
+        </div>
+        <button class="btn-confirm" onclick="processPayment()" style="background-color: #2196F3;">결제 확인 (식권발행)</button>
+    </div>
+</div>
+
+<div class="container" id="ticketView">
+    <div class="store-badge" id="ticketStoreName"></div>
+    <h2>✅ 식사 결제 완료</h2>
+    <div class="ticket-box">
+        <div style="font-size: 24px; font-weight: bold;" id="ticketUserName">이름</div>
+        <div class="ticket-amount" id="ticketAmount">0원</div>
+        <div class="ticket-time" id="ticketTime">00:00:00</div>
+        <div style="margin-top: 20px; font-size: 14px; opacity: 0.9;">맛있게 드세요! 😋</div>
+    </div>
+    <button class="btn-confirm" style="background:#fff; color:#333; border:1px solid #ddd; margin-top:20px;" onclick="location.reload()">처음으로</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc, Timestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
+      authDomain: "dream-meal-support.firebaseapp.com",
+      projectId: "dream-meal-support",
+      storageBucket: "dream-meal-support.firebasestorage.app",
+      messagingSenderId: "230720243044",
+      appId: "1:230720243044:web:eb38ecc28353a1c70aa671"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // URL에서 식당 이름 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const storeName = urlParams.get('store') || "알 수 없는 식당";
+    document.getElementById('displayStore').innerText = storeName;
+    document.getElementById('ticketStoreName').innerText = storeName;
+
+    let currentUser = null;
+    let applicationDocId = null;
+
+    // 1. 유저 인증 및 신청 내역 확인
+    window.verifyUser = async () => {
+        const rawId = document.getElementById('loginId').value.replace(/\s/g, ''); 
+        const pw = document.getElementById('loginPw').value;
+        const idMatch = rawId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+
+        if(!idMatch) return alert("아이디 형식을 확인하세요.");
+        const name = idMatch[1];
+        const birth = idMatch[2];
+
+        try {
+            // A. 유저 확인
+            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
+            const snapshot = await getDocs(q);
+            if(snapshot.empty) return alert("회원 정보가 틀립니다.");
+            
+            currentUser = snapshot.docs[0].data();
+            const userId = snapshot.docs[0].id;
+            const today = new Date().toISOString().split('T')[0];
+
+            // B. 급식 신청 내역 확인 (오늘 날짜)
+            const appQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
+            const appSnap = await getDocs(appQ);
+
+            if (appSnap.empty) {
+                // 신청 내역이 아예 없음
+                alert("⛔ 결제 불가\n\n센터에서 출석 및 식사 신청을 먼저 해주세요.\n혹은 선생님께 승인을 요청하세요.");
+                return;
+            }
+
+            const appData = appSnap.docs[0].data();
+            applicationDocId = appSnap.docs[0].id;
+
+            // 상태 체크 (신청됨 OR 승인됨)
+            // 'applied': 센터에서 신청함 / 'approved': 선생님이 승인함
+            if(appData.status === 'applied' || appData.status === 'approved') {
+                // 성공: 금액 입력창 보여주기
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('amountSection').style.display = 'block';
+            } else if (appData.status === 'completed') {
+                alert("이미 식사를 완료하셨습니다.");
+            } else {
+                alert("이용할 수 없는 상태입니다.");
+            }
+
+        } catch(e) {
+            console.error(e);
+            alert("시스템 오류");
+        }
+    };
+
+    // 2. 결제 처리
+    window.processPayment = async () => {
+        const amount = document.getElementById('payAmount').value;
+        if(!amount || amount < 1000) return alert("금액을 정확히 입력해주세요.");
+
+        try {
+            // DB 업데이트: 금액 저장, 상태 완료, 사용 시간 기록
+            // 식당 이름이 다를 경우, 현재 QR코드 식당 이름으로 업데이트 (유연성)
+            await updateDoc(doc(db, "meal_applications", applicationDocId), {
+                amount: Number(amount),
+                status: 'completed',
+                used_at: Timestamp.now(),
+                store_name: storeName // 실제 먹은 식당으로 덮어씀
+            });
+
+            // 화면 전환 (식권 표시)
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('ticketView').style.display = 'block';
+            
+            document.getElementById('ticketUserName').innerText = currentUser.name;
+            document.getElementById('ticketAmount').innerText = Number(amount).toLocaleString() + "원";
+            
+            // 시계
+            setInterval(() => {
+                document.getElementById('ticketTime').innerText = new Date().toLocaleTimeString();
+            }, 1000);
+
+        } catch(e) {
+            alert("결제 처리 실패");
+        }
+    };
+</script>
+</body>
+</html>
