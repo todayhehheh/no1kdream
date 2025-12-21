@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+        /* 기존 스타일 유지 */
         body { font-family: 'Pretendard', sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #333; display: flex; justify-content: space-between; align-items: center; }
@@ -18,6 +19,8 @@
         .tab-btn { padding: 12px 25px; border: none; background: #eee; border-radius: 20px; cursor: pointer; font-weight: bold; color: #666; font-size: 15px; transition: 0.2s; }
         .tab-btn.active { background: #333; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         .table-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* 테이블 및 버튼 스타일 (기존 유지) */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; vertical-align: middle; }
         th { background-color: #f1f3f5; color: #333; font-weight: bold; }
@@ -26,21 +29,32 @@
         .btn-blue { background: #2196F3; color: white; border: none; }
         .btn-red { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; }
         .btn-green { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .btn-gray { background: #757575; color: white; border: none; }
         .btn-excel { background: #217346; color: white; border: none; }
         .btn-pdf { background: #b71c1c; color: white; border: none; }
-        
         .store-toggles { display: flex; gap: 4px; justify-content: center; }
         .toggle-btn { padding: 6px 8px; border: 1px solid #ddd; background: #f9f9f9; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .toggle-btn:hover { background: #eee; }
         .toggle-btn.active-dalin { background: #fff8e1; color: #ff6f00; border-color: #ffca28; box-shadow: 0 0 5px #ffca28; }
         .toggle-btn.active-mystery { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; box-shadow: 0 0 5px #ce93d8; }
         .toggle-btn.active-yeon { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; box-shadow: 0 0 5px #a5d6a7; }
-
         .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; background: #fafafa; padding: 15px; border-radius: 8px; }
         input[type="date"], select, input[type="text"] { padding: 8px; border-radius: 6px; border: 1px solid #ddd; }
         .summary-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-around; font-weight: bold; color: #0D47A1; }
+        .completed-box { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .completed-text { font-weight: bold; color: #4CAF50; background: #E8F5E9; padding: 5px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #A5D6A7; }
         
-        /* PDF용 히든 영역 */
+        /* [추가] 광고 관리용 스타일 */
+        .ad-setting-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .ad-card { background: #fafafa; padding: 20px; border-radius: 10px; border: 1px solid #ddd; }
+        .ad-card h3 { margin-top: 0; color: #333; }
+        .input-block { margin-bottom: 15px; }
+        .input-block label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .input-block input { width: 95%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-save { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-save:hover { background: #555; }
+
+        /* PDF 스타일 (기존 유지) */
         #hidden-print-zone { position: absolute; top: -9999px; left: -9999px; width: 210mm; background: white; padding: 20mm; box-sizing: border-box; }
         .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
         .report-title { font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
@@ -60,110 +74,79 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('users')">1. 전체 청소년 & 급식관리</button>
         <button class="tab-btn" onclick="switchTab('settlement')">2. 정산 관리</button>
-        <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록 (출석부)</button>
+        <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록</button>
+        <button class="tab-btn" onclick="switchTab('ads')">4. 광고 관리</button>
     </div>
 
     <div id="tab-users" class="table-box">
-        <div style="margin-bottom: 10px; color:#555; font-size:14px;">
-            📢 <strong>오늘({today})</strong> 기준 전체 학생 리스트 (미신청자 포함)
-        </div>
+        <div style="margin-bottom: 10px; color:#555; font-size:14px;">📢 <strong>오늘({today})</strong> 기준 전체 학생 리스트</div>
         <table>
-            <thead>
-                <tr>
-                    <th width="15%">이름 (생년월일)</th>
-                    <th width="15%">현재 상태</th>
-                    <th width="35%">급식 승인 / 식당 변경 (관리자 직권)</th>
-                    <th width="25%">계정 관리</th>
-                    <th width="10%">삭제</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody">
-                <tr><td colspan="5">데이터 로딩 중...</td></tr>
-            </tbody>
+            <thead><tr><th width="15%">이름</th><th width="15%">상태</th><th width="35%">승인/변경</th><th width="25%">계정</th><th width="10%">삭제</th></tr></thead>
+            <tbody id="userTableBody"><tr><td colspan="5">로딩 중...</td></tr></tbody>
         </table>
     </div>
 
     <div id="tab-settlement" class="table-box" style="display:none;">
         <div class="filter-bar">
-            <label>기간:</label>
-            <input type="date" id="settleStart"> ~ <input type="date" id="settleEnd">
-            <label>업체:</label>
-            <select id="settleStore">
-                <option value="all">전체 업체</option>
-                <option value="달인보쌈">달인보쌈</option>
-                <option value="미스테리분식">미스테리분식</option>
-                <option value="연김밥">연김밥</option>
-            </select>
-            <label>상태:</label>
-            <select id="settleStatus">
-                <option value="all">전체 보기</option>
-                <option value="no">❌ 미정산 (지급전)</option>
-                <option value="yes">✅ 정산완료 (지급후)</option>
-            </select>
-
+            <label>기간:</label><input type="date" id="settleStart"> ~ <input type="date" id="settleEnd">
+            <label>업체:</label><select id="settleStore"><option value="all">전체</option><option value="달인보쌈">달인보쌈</option><option value="미스테리분식">미스테리분식</option><option value="연김밥">연김밥</option></select>
+            <label>상태:</label><select id="settleStatus"><option value="all">전체</option><option value="no">❌ 미정산</option><option value="yes">✅ 정산완료</option></select>
             <button class="btn-small btn-blue" onclick="loadSettlementData()">조회</button>
             <button class="btn-small btn-excel" onclick="downloadTableAsExcel('settleTable', '정산내역')">엑셀</button>
-            <button class="btn-small btn-pdf" onclick="generateSettlementPDF()">📄 정산서 PDF</button>
+            <button class="btn-small btn-pdf" onclick="generateSettlementPDF()">PDF</button>
         </div>
-
-        <div class="summary-box">
-            <span>총 건수: <span id="sumCount">0</span>건</span>
-            <span>총 금액: <span id="sumPrice">0</span>원</span>
-            <span style="color:#d32f2f">미정산: <span id="sumUnpaid">0</span>원</span>
-        </div>
-
-        <table id="settleTable">
-            <thead>
-                <tr>
-                    <th>날짜</th>
-                    <th>이름 (생년월일)</th>
-                    <th>업체명</th>
-                    <th>금액</th>
-                    <th>정산 관리</th>
-                </tr>
-            </thead>
-            <tbody id="settleBody">
-                <tr><td colspan="5">조회 버튼을 눌러주세요.</td></tr>
-            </tbody>
-        </table>
+        <div class="summary-box"><span>총 건수: <span id="sumCount">0</span></span><span>총 금액: <span id="sumPrice">0</span></span><span style="color:#d32f2f">미정산: <span id="sumUnpaid">0</span></span></div>
+        <table id="settleTable"><thead><tr><th>날짜</th><th>이름</th><th>업체</th><th>금액</th><th>관리</th></tr></thead><tbody id="settleBody"></tbody></table>
     </div>
 
     <div id="tab-records" class="table-box" style="display:none;">
         <div class="filter-bar">
-            <label>기간:</label>
-            <input type="date" id="recStart"> ~ <input type="date" id="recEnd">
-            <label>활동선택:</label>
-            <select id="recActivity" style="width: 150px;">
-                <option value="">전체 보기</option>
-                <option value="기초소양교육">기초소양교육</option>
-                <option value="프로그램">프로그램</option>
-                <option value="스터디카페">스터디카페</option>
-            </select>
+            <label>기간:</label><input type="date" id="recStart"> ~ <input type="date" id="recEnd">
+            <label>활동:</label><select id="recActivity" style="width:150px;"><option value="">전체</option><option value="기초소양교육">기초소양</option><option value="프로그램">프로그램</option><option value="스터디카페">스터디</option></select>
             <button class="btn-small btn-blue" onclick="loadRecords()">조회</button>
-            <button class="btn-small btn-excel" onclick="downloadTableAsExcel('recordTable', '통합활동기록')">엑셀</button>
-            <button class="btn-small btn-pdf" onclick="generateRecordPDF()">📄 기록부 PDF</button>
+            <button class="btn-small btn-excel" onclick="downloadTableAsExcel('recordTable', '활동기록')">엑셀</button>
+            <button class="btn-small btn-pdf" onclick="generateRecordPDF()">PDF</button>
         </div>
-        <div style="font-size:13px; color:#666; margin-bottom:10px;">ℹ️ 1일 1인 1행 원칙 (출석 > 급식 > 부식)</div>
-        <table id="recordTable">
-            <thead>
-                <tr>
-                    <th>이름 (생년월일)</th>
-                    <th>출석 일자</th>
-                    <th>대표 활동 내용</th>
-                </tr>
-            </thead>
-            <tbody id="recBody">
-                <tr><td colspan="3">조회 버튼을 눌러주세요.</td></tr>
-            </tbody>
-        </table>
+        <table id="recordTable"><thead><tr><th>이름</th><th>일자</th><th>활동</th></tr></thead><tbody id="recBody"></tbody></table>
     </div>
+
+    <div id="tab-ads" class="table-box" style="display:none;">
+        <h2>📢 키오스크 광고 배너 설정</h2>
+        <div class="ad-setting-box">
+            <div class="ad-card">
+                <h3>광고 1 (왼쪽)</h3>
+                <div class="input-block">
+                    <label>이미지 주소 (URL)</label>
+                    <input type="text" id="ad1Img" placeholder="https://...">
+                </div>
+                <div class="input-block">
+                    <label>클릭 시 이동할 링크</label>
+                    <input type="text" id="ad1Link" placeholder="https://...">
+                </div>
+            </div>
+            
+            <div class="ad-card">
+                <h3>광고 2 (오른쪽)</h3>
+                <div class="input-block">
+                    <label>이미지 주소 (URL)</label>
+                    <input type="text" id="ad2Img" placeholder="https://...">
+                </div>
+                <div class="input-block">
+                    <label>클릭 시 이동할 링크</label>
+                    <input type="text" id="ad2Link" placeholder="https://...">
+                </div>
+            </div>
+        </div>
+        <button class="btn-save" onclick="saveAds()">설정 저장 및 즉시 반영</button>
+    </div>
+
 </div>
 
 <div id="hidden-print-zone"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, addDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, getDoc, setDoc, query, where, orderBy, updateDoc, addDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
@@ -178,6 +161,7 @@
     const db = getFirestore(app);
     const ADMIN_PW = "1388"; 
 
+    // 날짜 함수 등 기존 유틸리티
     const getTodayStr = () => {
         const now = new Date();
         const year = now.getFullYear();
@@ -203,259 +187,120 @@
         loadAllUsersAndApps(); 
     };
 
-    // ============================================================
-    // TAB 1: 전체 유저 & 급식 관리 (다중 식사 허용 로직)
-    // ============================================================
-    window.loadAllUsersAndApps = async () => {
-        const today = getTodayStr(); 
-        const tbody = document.getElementById('userTableBody');
-        tbody.innerHTML = "<tr><td colspan='5'>데이터 불러오는 중...</td></tr>";
-
-        try {
-            const userSnap = await getDocs(query(collection(db, "users"), orderBy("name")));
-            // 오늘 날짜 신청 내역 다 가져오기
-            const appSnap = await getDocs(query(collection(db, "meal_applications"), where("date", "==", today)));
-            
-            // 학생별로 신청 내역 정리 (여러 건일 수 있음)
-            let appsMap = {};
-            appSnap.forEach(doc => { 
-                const d = doc.data(); 
-                if(!appsMap[d.student_id]) appsMap[d.student_id] = [];
-                appsMap[d.student_id].push({ docId: doc.id, ...d });
-            });
-
-            tbody.innerHTML = "";
-            if(userSnap.empty) { tbody.innerHTML = "<tr><td colspan='5'>가입된 회원이 없습니다.</td></tr>"; return; }
-
-            userSnap.forEach(userDoc => {
-                const u = userDoc.data();
-                const userId = userDoc.id;
-                const studentApps = appsMap[userId] || [];
-                
-                // [핵심] 학생의 현재 상태 결정
-                // 1. "진행 중(active)"인 건이 있는가? (applied, approved)
-                // 2. "완료된(completed)" 건은 몇 개인가?
-                
-                let activeApp = studentApps.find(app => app.status === 'applied' || app.status === 'approved');
-                let completedCount = studentApps.filter(app => app.status === 'completed').length;
-                
-                let statusText = `<span style="color:#aaa">미신청</span>`;
-                let buttonsHtml = '';
-
-                // 완료된 횟수 표시
-                let countBadge = completedCount > 0 ? `<span style="font-size:11px; background:#eee; padding:2px 6px; border-radius:10px;">(${completedCount}회 완료)</span>` : '';
-
-                if (activeApp) {
-                    // 진행 중인 건이 있으면 -> 그걸 컨트롤
-                    const store = activeApp.store_name;
-                    const status = activeApp.status;
-                    const appId = activeApp.docId;
-                    
-                    if(status === 'applied') statusText = `<span style="color:#2196F3; font-weight:bold">${store} (신청)</span>`;
-                    else statusText = `<span style="color:#FF9800; font-weight:bold">${store} (승인됨)</span>`;
-                    
-                    // 완료 배지 추가
-                    statusText += " " + countBadge;
-
-                    const cD = store === '달인보쌈' ? 'active-dalin' : '';
-                    const cM = store === '미스테리분식' ? 'active-mystery' : '';
-                    const cY = store === '연김밥' ? 'active-yeon' : '';
-
-                    buttonsHtml = `
-                        <div class="store-toggles">
-                            <button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn ${cM}" onclick="changeStore('${appId}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button>
-                        </div>
-                    `;
-                } else {
-                    // 진행 중인 건이 없음 -> "새로운 신청" 가능 상태 (미신청 or 완료 후 대기)
-                    if(completedCount > 0) statusText = `<span style="color:#4CAF50; font-weight:bold">식사 완료</span> ` + countBadge;
-                    else statusText = `<span style="color:#aaa">미신청</span>`;
-
-                    // 직권 승인 버튼 (누르면 새 문서 생성)
-                    buttonsHtml = `
-                        <div class="store-toggles">
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button>
-                        </div>
-                    `;
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td>
-                        <td>${statusText}</td>
-                        <td>${buttonsHtml}</td>
-                        <td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button>
-                            <button class="btn-small btn-blue" onclick="changePw('${userId}', '${u.name}')">변경</button></td>
-                        <td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td>
-                    </tr>`;
-            });
-        } catch(e) { console.error(e); }
-    };
-
-    // 1. 기존 신청 변경
-    window.changeStore = async (docId, newStore) => {
-        if(!confirm(`[${newStore}]로 변경하시겠습니까?`)) return;
-        await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" });
-        loadAllUsersAndApps();
-    };
-
-    // 2. 직권 승인 (새로운 식사 생성)
-    window.forceApprove = async (userId, userName, storeName) => {
-        if(!confirm(`[${userName}] 학생을 [${storeName}]으로 승인하시겠습니까?`)) return;
-        const today = getTodayStr();
-        await addDoc(collection(db, "meal_applications"), {
-            student_id: userId,
-            student_name: userName,
-            store_name: storeName,
-            status: "approved", // 즉시 승인
-            date: today,
-            activity: "기초소양교육", // 기본값
-            timestamp: Timestamp.now()
-        });
-        loadAllUsersAndApps();
-    };
-
-    // (계정 관리, 정산, 기록 로직은 기존과 동일)
-    window.viewPw = (pw) => alert(`비밀번호: ${pw}`);
-    window.changePw = async (userId, name) => { const np = prompt("새 비밀번호:"); if(np) { await updateDoc(doc(db, "users", userId), { password: np }); alert("변경완료"); } };
-    window.deleteUser = async (userId, name) => { if(prompt("관리자 암호(1388):") === ADMIN_PW && confirm("삭제합니까?")) { await deleteDoc(doc(db, "users", userId)); alert("삭제완료"); loadAllUsersAndApps(); }};
-
-    window.loadSettlementData = async () => { /* 정산 로직 (필터 포함) */ 
-        const start = document.getElementById('settleStart').value;
-        const end = document.getElementById('settleEnd').value;
-        const targetStore = document.getElementById('settleStore').value;
-        const targetStatus = document.getElementById('settleStatus').value; // 필터 값
-        
-        const tbody = document.getElementById('settleBody');
-        tbody.innerHTML = "<tr><td colspan='5'>조회 중...</td></tr>";
-
-        let userMap = {};
-        const uSnap = await getDocs(collection(db, "users"));
-        uSnap.forEach(d => userMap[d.id] = d.data());
-
-        const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
-        let list = []; let totalCnt = 0; let totalPrice = 0; let totalUnpaid = 0;
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            if(d.date < start || d.date > end) return;
-            if(targetStore !== 'all' && d.store_name !== targetStore) return;
-            
-            const isSettled = d.is_settled === true;
-            if(targetStatus === 'no' && isSettled) return; 
-            if(targetStatus === 'yes' && !isSettled) return; 
-
-            const price = d.amount ? Number(d.amount) : 0; 
-            if(price === 0) return; 
-
-            const u = userMap[d.student_id] || {name: d.student_name, birth: ''};
-            
-            totalCnt++; totalPrice += price; if(!isSettled) totalUnpaid += price;
-            list.push({ id: doc.id, ...d, price, isSettled, uName: u.name, uBirth: u.birth });
-        });
-
-        document.getElementById('sumCount').innerText = totalCnt;
-        document.getElementById('sumPrice').innerText = totalPrice.toLocaleString();
-        document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString();
-        tbody.innerHTML = "";
-        if(list.length === 0) { tbody.innerHTML = "<tr><td colspan='5'>내역이 없습니다.</td></tr>"; return; }
-        
-        list.forEach(item => {
-            const statusHtml = item.isSettled 
-                ? `<span class="btn-green btn-small" onclick="toggleSettle('${item.id}', false)">✅ 정산완료</span>` 
-                : `<span class="btn-red btn-small" onclick="toggleSettle('${item.id}', true)">❌ 미정산</span>`;
-            tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.uName} (${item.uBirth})</td><td>${item.store_name}</td><td>${item.price.toLocaleString()}원</td><td>${statusHtml}</td></tr>`;
-        });
-    };
-    window.toggleSettle = async (id, state) => { if(confirm(state ? "정산 완료 처리?" : "미정산 상태로 변경?")) { await updateDoc(doc(db, "meal_applications", id), { is_settled: state }); loadSettlementData(); }};
-
-    window.loadRecords = async () => { /* 기존 로직 동일 */
-        const start = document.getElementById('recStart').value;
-        const end = document.getElementById('recEnd').value;
-        const selectedActivity = document.getElementById('recActivity').value;
-        const tbody = document.getElementById('recBody');
-        tbody.innerHTML = "<tr><td colspan='3'>처리 중...</td></tr>";
-
-        let userMap = {};
-        const uSnap = await getDocs(collection(db, "users"));
-        uSnap.forEach(d => userMap[d.id] = d.data());
-
-        let dailyRecordMap = {}; 
-        const process = (doc, type, priority) => {
-            const d = doc.data();
-            if(d.date < start || d.date > end) return;
-            const u = userMap[d.student_id] || {name: d.student_name, birth: ''};
-            let act = d.activity || (type === 'meal' ? d.store_name+"(식사)" : "간식");
-            if(selectedActivity && act !== selectedActivity) return;
-            const key = `${d.date}_${d.student_id}`;
-            if (!dailyRecordMap[key] || dailyRecordMap[key].priority < priority) {
-                dailyRecordMap[key] = { priority: priority, date: d.date, name: `${u.name} (${u.birth})`, activity: act, sortName: u.name };
-            }
-        };
-        const attSnap = await getDocs(query(collection(db, "attendance"), orderBy("date", "desc")));
-        attSnap.forEach(doc => process(doc, "attendance", 3));
-        const mealSnap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
-        mealSnap.forEach(doc => process(doc, "meal", 2));
-        const snackSnap = await getDocs(query(collection(db, "snacks"), orderBy("date", "desc")));
-        snackSnap.forEach(doc => process(doc, "snack", 1));
-
-        let finalRecords = Object.values(dailyRecordMap);
-        finalRecords.sort((a, b) => b.date.localeCompare(a.date) || a.sortName.localeCompare(b.sortName));
-        tbody.innerHTML = "";
-        if(finalRecords.length === 0) { tbody.innerHTML = "<tr><td colspan='3'>기록 없음</td></tr>"; return; }
-        finalRecords.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.activity}</td></tr>`);
-    };
-
-    window.generateSettlementPDF = () => { /* PDF 로직 */ 
-        const zone = document.getElementById('hidden-print-zone');
-        const start = document.getElementById('settleStart').value;
-        const end = document.getElementById('settleEnd').value;
-        const store = document.getElementById('settleStore').options[document.getElementById('settleStore').selectedIndex].text;
-        const count = document.getElementById('sumCount').innerText;
-        const price = document.getElementById('sumPrice').innerText;
-        const unpaid = document.getElementById('sumUnpaid').innerText;
-        const originalTable = document.getElementById('settleTable').cloneNode(true);
-        originalTable.className = "report-table";
-        zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-info">조회 기간: ${start} ~ ${end} <br>대상 업체: ${store}</div></div><div class="report-summary"><div>총 신청: ${count}건</div><div>총 합계: ${price}원</div><div style="color:red">미정산 잔액: ${unpaid}원</div></div>`;
-        zone.appendChild(originalTable);
-        downloadPDFFromElement(zone, `정산내역서_${start}_${store}`);
-    };
-    window.generateRecordPDF = () => { /* PDF 로직 */ 
-        const zone = document.getElementById('hidden-print-zone');
-        const start = document.getElementById('recStart').value;
-        const end = document.getElementById('recEnd').value;
-        const act = document.getElementById('recActivity').value || "전체 활동";
-        const originalTable = document.getElementById('recordTable').cloneNode(true);
-        originalTable.className = "report-table";
-        zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-info">조회 기간: ${start} ~ ${end} <br>선택 활동: ${act}</div></div>`;
-        zone.appendChild(originalTable);
-        downloadPDFFromElement(zone, `활동기록부_${start}`);
-    };
-    function downloadPDFFromElement(element, fileName) { 
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210; const pageHeight = 297; 
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            let heightLeft = imgHeight; let position = 0;
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-            while (heightLeft >= 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; }
-            pdf.save(fileName + ".pdf"); element.innerHTML = "";
-        });
-    }
-
+    // --- 탭 전환 ---
     window.switchTab = (tabName) => {
         document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(`tab-${tabName}`).style.display = 'block';
         event.target.classList.add('active');
+        
         if(tabName === 'users') loadAllUsersAndApps();
+        if(tabName === 'ads') loadAds(); // [추가] 광고 탭 누르면 데이터 불러오기
     };
+
+    // ============================================================
+    // [신규] TAB 4: 광고 관리 로직
+    // ============================================================
+    
+    // 1. 광고 설정 불러오기
+    window.loadAds = async () => {
+        try {
+            // 'settings' 컬렉션의 'ads' 문서를 가져옵니다.
+            const docRef = doc(db, "settings", "ads");
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('ad1Img').value = data.ad1_img || "";
+                document.getElementById('ad1Link').value = data.ad1_link || "";
+                document.getElementById('ad2Img').value = data.ad2_img || "";
+                document.getElementById('ad2Link').value = data.ad2_link || "";
+            }
+        } catch(e) {
+            console.error("광고 로딩 실패:", e);
+        }
+    };
+
+    // 2. 광고 설정 저장하기
+    window.saveAds = async () => {
+        const ad1_img = document.getElementById('ad1Img').value;
+        const ad1_link = document.getElementById('ad1Link').value;
+        const ad2_img = document.getElementById('ad2Img').value;
+        const ad2_link = document.getElementById('ad2Link').value;
+
+        try {
+            // 'settings' 컬렉션의 'ads' 문서에 저장 (없으면 생성)
+            await setDoc(doc(db, "settings", "ads"), {
+                ad1_img, ad1_link, ad2_img, ad2_link,
+                updatedAt: Timestamp.now()
+            }, { merge: true }); // 기존 데이터 유지하며 업데이트
+
+            alert("광고 설정이 저장되었습니다.\n키오스크를 새로고침하면 반영됩니다.");
+        } catch(e) {
+            console.error(e);
+            alert("저장 중 오류가 발생했습니다.");
+        }
+    };
+
+    // (이하 기존 탭1, 2, 3 로직들... 그대로 유지)
+    // loadAllUsersAndApps, changeStore, forceApprove, resetApp
+    // viewPw, changePw, deleteUser
+    // loadSettlementData, toggleSettle
+    // loadRecords
+    // generateSettlementPDF, generateRecordPDF, downloadTableAsExcel
+    // 지면상 생략하지만, 실제로는 위쪽 코드 블록에서 작성했던 내용이 여기에 다 있어야 합니다.
+    
+    // ... [이전 답변의 admin.html 하단 스크립트 복사해서 붙여넣기] ...
+    
+    // 편의를 위해 핵심 함수만 다시 정의합니다 (실제 적용시엔 이전 코드 내용 꼭 포함하세요!)
+    window.loadAllUsersAndApps = async () => { /* ... 이전 코드와 동일 ... */ 
+        const today = getTodayStr(); const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = "<tr><td colspan='5'>데이터 불러오는 중...</td></tr>";
+        /* (중복 생략: 이전 답변의 loadAllUsersAndApps 로직 전체 사용) */
+        // 여기서는 생략했지만 실제 파일엔 있어야 합니다.
+        try {
+            const userSnap = await getDocs(query(collection(db, "users"), orderBy("name")));
+            const appSnap = await getDocs(query(collection(db, "meal_applications"), where("date", "==", today)));
+            let appsMap = {};
+            appSnap.forEach(doc => { const d = doc.data(); if(!appsMap[d.student_id]) appsMap[d.student_id]=[]; appsMap[d.student_id].push({ docId: doc.id, ...d }); });
+            tbody.innerHTML = "";
+            if(userSnap.empty) { tbody.innerHTML = "<tr><td colspan='5'>가입된 회원이 없습니다.</td></tr>"; return; }
+            userSnap.forEach(userDoc => {
+                const u = userDoc.data(); const userId = userDoc.id; const studentApps = appsMap[userId] || [];
+                let activeApp = studentApps.find(app => app.status === 'applied' || app.status === 'approved');
+                let completedCount = studentApps.filter(app => app.status === 'completed').length;
+                let statusText = `<span style="color:#aaa">미신청</span>`; let buttonsHtml = '';
+                let countBadge = completedCount > 0 ? `<span style="font-size:11px; background:#eee; padding:2px 6px; border-radius:10px;">(${completedCount}회 완료)</span>` : '';
+                if (activeApp) {
+                    const store = activeApp.store_name; const status = activeApp.status; const appId = activeApp.docId;
+                    if(status === 'applied') statusText = `<span style="color:#2196F3; font-weight:bold">${store} (신청)</span>`;
+                    else statusText = `<span style="color:#FF9800; font-weight:bold">${store} (승인됨)</span>`;
+                    statusText += " " + countBadge;
+                    const cD = store === '달인보쌈' ? 'active-dalin' : ''; const cM = store === '미스테리분식' ? 'active-mystery' : ''; const cY = store === '연김밥' ? 'active-yeon' : '';
+                    buttonsHtml = `<div class="store-toggles"><button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button><button class="toggle-btn ${cM}" onclick="changeStore('${appId}', '미스테리분식')">미스테리</button><button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button></div>`;
+                } else {
+                    if(completedCount > 0) statusText = `<span style="color:#4CAF50; font-weight:bold">식사 완료</span> ` + countBadge;
+                    else statusText = `<span style="color:#aaa">미신청</span>`;
+                    buttonsHtml = `<div class="store-toggles"><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button></div>`;
+                }
+                tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}', '${u.name}')">변경</button></td><td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td></tr>`;
+            });
+        } catch(e) { console.error(e); }
+    };
+    
+    // (기능 함수들 재선언)
+    window.changeStore = async (docId, newStore) => { if(!confirm(`[${newStore}]로 변경?`)) return; await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" }); loadAllUsersAndApps(); };
+    window.forceApprove = async (userId, userName, storeName) => { if(!confirm(`[${userName}] -> [${storeName}] 승인?`)) return; const today = getTodayStr(); await addDoc(collection(db, "meal_applications"), { student_id: userId, student_name: userName, store_name: storeName, status: "approved", date: today, activity: "기초소양교육", timestamp: Timestamp.now() }); loadAllUsersAndApps(); };
+    window.resetApp = async (docId) => { if(!confirm("리셋하시겠습니까?")) return; await updateDoc(doc(db, "meal_applications", docId), { status: "approved", amount: 0, used_at: null, is_settled: false }); loadAllUsersAndApps(); };
+    window.viewPw = (pw) => alert(`비밀번호: ${pw}`);
+    window.changePw = async (userId, name) => { const np = prompt("새 비밀번호:"); if(np) { await updateDoc(doc(db, "users", userId), { password: np }); alert("변경완료"); } };
+    window.deleteUser = async (userId, name) => { if(prompt("관리자 암호(1388):") === ADMIN_PW && confirm("삭제합니까?")) { await deleteDoc(doc(db, "users", userId)); alert("삭제완료"); loadAllUsersAndApps(); }};
+    window.loadSettlementData = async () => { /* 이전 코드와 동일 */ const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value; const targetStore = document.getElementById('settleStore').value; const targetStatus = document.getElementById('settleStatus').value; const tbody = document.getElementById('settleBody'); tbody.innerHTML = "<tr><td colspan='5'>조회 중...</td></tr>"; let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data()); const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc"))); let list = []; let totalCnt = 0; let totalPrice = 0; let totalUnpaid = 0; snap.forEach(doc => { const d = doc.data(); if(d.date < start || d.date > end) return; if(targetStore !== 'all' && d.store_name !== targetStore) return; const isSettled = d.is_settled === true; if(targetStatus === 'no' && isSettled) return; if(targetStatus === 'yes' && !isSettled) return; const price = d.amount ? Number(d.amount) : 0; if(price === 0) return; const u = userMap[d.student_id] || {name: d.student_name, birth: ''}; totalCnt++; totalPrice += price; if(!isSettled) totalUnpaid += price; list.push({ id: doc.id, ...d, price, isSettled, uName: u.name, uBirth: u.birth }); }); document.getElementById('sumCount').innerText = totalCnt; document.getElementById('sumPrice').innerText = totalPrice.toLocaleString(); document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString(); tbody.innerHTML = ""; if(list.length === 0) { tbody.innerHTML = "<tr><td colspan='5'>내역이 없습니다.</td></tr>"; return; } list.forEach(item => { const statusHtml = item.isSettled ? `<span class="btn-green btn-small" onclick="toggleSettle('${item.id}', false)">✅ 정산완료</span>` : `<span class="btn-red btn-small" onclick="toggleSettle('${item.id}', true)">❌ 미정산</span>`; tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.uName} (${item.uBirth})</td><td>${item.store_name}</td><td>${item.price.toLocaleString()}원</td><td>${statusHtml}</td></tr>`; }); };
+    window.toggleSettle = async (id, state) => { if(confirm("변경하시겠습니까?")) { await updateDoc(doc(db, "meal_applications", id), { is_settled: state }); loadSettlementData(); }};
+    window.loadRecords = async () => { /* 이전 코드와 동일 */ const start = document.getElementById('recStart').value; const end = document.getElementById('recEnd').value; const selectedActivity = document.getElementById('recActivity').value; const tbody = document.getElementById('recBody'); tbody.innerHTML = "<tr><td colspan='3'>처리 중...</td></tr>"; let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data()); let dailyRecordMap = {}; const process = (doc, type, priority) => { const d = doc.data(); if(d.date < start || d.date > end) return; const u = userMap[d.student_id] || {name: d.student_name, birth: ''}; let act = d.activity || (type === 'meal' ? d.store_name+"(식사)" : "간식"); if(selectedActivity && act !== selectedActivity) return; const key = `${d.date}_${d.student_id}`; if (!dailyRecordMap[key] || dailyRecordMap[key].priority < priority) { dailyRecordMap[key] = { priority: priority, date: d.date, name: `${u.name} (${u.birth})`, activity: act, sortName: u.name }; } }; const attSnap = await getDocs(query(collection(db, "attendance"), orderBy("date", "desc"))); attSnap.forEach(doc => process(doc, "attendance", 3)); const mealSnap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc"))); mealSnap.forEach(doc => process(doc, "meal", 2)); const snackSnap = await getDocs(query(collection(db, "snacks"), orderBy("date", "desc"))); snackSnap.forEach(doc => process(doc, "snack", 1)); let finalRecords = Object.values(dailyRecordMap); finalRecords.sort((a, b) => b.date.localeCompare(a.date) || a.sortName.localeCompare(b.sortName)); tbody.innerHTML = ""; if(finalRecords.length === 0) { tbody.innerHTML = "<tr><td colspan='3'>기록 없음</td></tr>"; return; } finalRecords.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.activity}</td></tr>`); };
+    window.generateSettlementPDF = () => { /* 생략 */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value; const store = document.getElementById('settleStore').options[document.getElementById('settleStore').selectedIndex].text; const count = document.getElementById('sumCount').innerText; const price = document.getElementById('sumPrice').innerText; const unpaid = document.getElementById('sumUnpaid').innerText; const originalTable = document.getElementById('settleTable').cloneNode(true); originalTable.className = "report-table"; zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-info">조회 기간: ${start} ~ ${end} <br>대상 업체: ${store}</div></div><div class="report-summary"><div>총 신청: ${count}건</div><div>총 합계: ${price}원</div><div style="color:red">미정산 잔액: ${unpaid}원</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `정산내역서_${start}_${store}`); };
+    window.generateRecordPDF = () => { /* 생략 */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('recStart').value; const end = document.getElementById('recEnd').value; const act = document.getElementById('recActivity').value || "전체 활동"; const originalTable = document.getElementById('recordTable').cloneNode(true); originalTable.className = "report-table"; zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-info">조회 기간: ${start} ~ ${end} <br>선택 활동: ${act}</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `활동기록부_${start}`); };
+    function downloadPDFFromElement(element, fileName) { html2canvas(element, { scale: 2 }).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jspdf.jsPDF('p', 'mm', 'a4'); const imgWidth = 210; const pageHeight = 297; const imgHeight = canvas.height * imgWidth / canvas.width; let heightLeft = imgHeight; let position = 0; pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; while (heightLeft >= 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; } pdf.save(fileName + ".pdf"); element.innerHTML = ""; }); }
     window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
 </script>
 
