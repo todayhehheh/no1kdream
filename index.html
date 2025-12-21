@@ -1,9 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>노원구 꿈드림 - 센터 키오스크</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        :root {
+            --primary-color: #6C5CE7;
+            --primary-light: #A29BFE;
+            --accent-color: #00B894;
+            --bg-color: #F0F2F5;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            --modal-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 550px; 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 35px; 
+            border-radius: 30px; 
+            box-shadow: var(--card-shadow); 
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #2d3436; margin: 0 0 8px 0; font-size: 28px; letter-spacing: -0.5px; }
+        .header p { color: #636e72; margin: 0; font-size: 15px; }
+
+        /* 탑 링크 */
+        .top-link { position: absolute; top: 20px; right: 25px; }
+        .top-link a { 
+            text-decoration: none; color: #636e72; font-size: 13px; font-weight: 600; 
+            background: #dfe6e9; padding: 6px 12px; border-radius: 20px; transition: 0.2s;
+        }
+        .top-link a:hover { background: #b2bec3; color: #2d3436; }
+
+        /* 메인 그리드 */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        
+        .btn { 
+            border: none; border-radius: 20px; cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            font-weight: 700; color: white; position: relative; overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 7px 14px rgba(0,0,0,0.15); }
+
+        .btn-big { 
+            height: 150px; font-size: 22px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-attendance { background: linear-gradient(135deg, #6C5CE7, #8e44ad); }
+        .btn-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
+
+        /* 급식 그리드 */
+        h3 { color: #2d3436; margin: 0 0 15px 5px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .btn-meal { 
+            height: 90px; font-size: 17px; background-color: #fff; color: #2d3436; 
+            border: 2px solid #f1f2f6; 
+        }
+        .btn-meal:hover { border-color: var(--primary-color); color: var(--primary-color); background: #fdfdfd; }
+        .btn-disabled { background-color: #dfe6e9; color: #b2bec3; cursor: not-allowed; border: none; box-shadow: none; }
+        .btn-disabled:hover { transform: none; }
+
+        /* 광고 그리드 */
+        .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-ad { 
+            height: 120px; background-size: cover; background-position: center; 
+            border-radius: 20px; position: relative; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .btn-ad span { 
+            position: absolute; bottom: 10px; right: 10px;
+            background: rgba(0,0,0,0.5); color: white; padding: 4px 8px; 
+            border-radius: 12px; font-size: 11px; backdrop-filter: blur(4px);
+        }
+
+        /* === 모달 디자인 (Pretty Popups) === */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(45, 52, 54, 0.4); backdrop-filter: blur(5px);
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal.show { opacity: 1; } /* JS로 제어 */
+
+        .modal-content { 
+            background: white; padding: 40px 30px; border-radius: 30px; width: 85%; max-width: 400px; 
+            text-align: left; box-shadow: var(--modal-shadow);
+            transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .modal.show .modal-content { transform: translateY(0); }
+
+        .close-btn { 
+            position: absolute; top: 20px; right: 25px; 
+            cursor: pointer; font-size: 28px; color: #b2bec3; transition: 0.2s; 
+        }
+        .close-btn:hover { color: #2d3436; transform: rotate(90deg); }
+
+        .modal h2 { margin: 0 0 25px 0; text-align: center; color: #2d3436; font-size: 24px; }
+
+        /* 활동 선택 라디오 (카드형) */
+        .section-label { text-align: center; font-size: 14px; color: #636e72; margin-bottom: 10px; font-weight: 600; }
+        .radio-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        .radio-item { flex: 1; }
+        .radio-item input { display: none; }
+        .radio-item label { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 80px; background: #f1f2f6; border-radius: 16px; 
+            font-size: 14px; font-weight: 700; color: #636e72; cursor: pointer; 
+            border: 2px solid transparent; transition: 0.2s; 
+        }
+        .radio-item label span { font-size: 24px; margin-bottom: 5px; } /* 이모지 크기 */
+        .radio-item input:checked + label { 
+            background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); 
+            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
+        }
+
+        /* 입력창 스타일 */
+        .input-group { margin-bottom: 15px; }
+        .input-group input { 
+            width: 100%; padding: 16px; border: 2px solid #f1f2f6; border-radius: 16px; 
+            font-size: 16px; outline: none; background: #fdfdfd; transition: 0.2s; box-sizing: border-box;
+            font-family: 'Pretendard', sans-serif;
+        }
+        .input-group input:focus { border-color: var(--primary-color); background: white; }
+        .input-group input::placeholder { color: #b2bec3; }
+
+        /* 확인 버튼 */
+        .btn-confirm { 
+            width: 100%; background: #2d3436; color: white; padding: 18px; 
+            border: none; border-radius: 16px; font-size: 17px; font-weight: 700; 
+            cursor: pointer; margin-top: 10px; transition: 0.2s;
+        }
+        .btn-confirm:hover { background: #000; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-link"><a href="#" onclick="openRegisterModal()">🆕 신규가입</a></div>
+    
+    <div class="header">
+        <h1>🌱 노원구 꿈드림</h1>
+        <p>오늘도 힘내서 꿈을 향해!</p>
+    </div>
+
+    <div class="main-grid">
+        <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
+            <span style="font-size: 40px;">📅</span>
+            <span>출석하기</span>
+        </button>
+        <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
+            <span style="font-size: 40px;">🥪</span>
+            <span>부식 신청</span>
+        </button>
+    </div>
+
+    <h3>🍚 오늘 뭐 먹지? (식사 신청)</h3>
+    <div class="meal-grid">
+        <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
+        <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
+        <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
+        <button class="btn btn-meal btn-disabled">준비중</button>
+    </div>
+
+    <div class="ad-grid">
+        <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="btn btn-ad"><span>AD</span></div></a>
+        <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="btn btn-ad"><span>AD</span></div></a>
+    </div>
+</div>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
+        <h2 id="modalTitle">인증 및 신청</h2>
+        
+        <div id="activitySection">
+            <div class="section-label">✨ 오늘의 활동을 선택해주세요</div>
+            <div class="radio-group">
+                <div class="radio-item">
+                    <input type="radio" id="act1" name="activity" value="기초소양교육" checked>
+                    <label for="act1"><span>📚</span>기초소양</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="act2" name="activity" value="프로그램">
+                    <label for="act2"><span>🎨</span>프로그램</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="act3" name="activity" value="스터디카페">
+                    <label for="act3"><span>✏️</span>스터디</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="loginId" placeholder="아이디 (이름+생년월일 6자리)">
+        </div>
+        <div class="input-group">
+            <input type="password" id="loginPw" placeholder="비밀번호">
+        </div>
+        <button class="btn-confirm" onclick="processAllInOne()">신청 완료하기</button>
+    </div>
+</div>
+
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
+        <h2>회원가입</h2>
+        <div class="input-group"><input type="text" id="regName" placeholder="이름 (예: 홍길동)"></div>
+        <div class="input-group"><input type="tel" id="regBirth" maxlength="6" placeholder="생년월일 (예: 080101)"></div>
+        <div class="input-group"><input type="password" id="regPw" placeholder="비밀번호 설정"></div>
+        <div class="input-group"><input type="password" id="regPwConfirm" placeholder="비밀번호 확인"></div>
+        <button class="btn-confirm" onclick="registerUser()">가입하기</button>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    // [중요] getDoc, doc 추가
     import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. 기본 광고 (DB 로딩 전이나 없을 때 표시)
     const DEFAULT_ADS = {
         ad1: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" },
         ad2: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" }
@@ -20,45 +253,140 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // [신규] 광고 불러오기 함수
+    // 광고 로드
     const loadAds = async () => {
         try {
             const docRef = doc(db, "settings", "ads");
             const docSnap = await getDoc(docRef);
-
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // DB 데이터가 있으면 적용
                 if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
                 if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
-                
                 if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
                 if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
-            } else {
-                // 없으면 기본값
-                applyDefaultAds();
-            }
-        } catch(e) {
-            console.error("광고 로딩 오류:", e);
-            applyDefaultAds();
-        }
+            } else applyDefaultAds();
+        } catch(e) { applyDefaultAds(); }
     };
-
     const applyDefaultAds = () => {
         document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
         document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
     };
-
-    // 초기화 시 실행
     loadAds();
 
-    // ... (이하 기존 로직 동일: currentType, openCombinedModal, processAllInOne, registerUser 등) ...
-    // 지면상 생략, 기존 index.html의 나머지 스크립트는 그대로 유지하세요.
-    
-    let currentType = ""; let currentTargetName = "";
-    window.openCombinedModal = (type, targetName = "") => { /* ... */ document.getElementById('loginModal').style.display = 'flex'; };
-    window.processAllInOne = async () => { /* ... 기존과 동일 ... */ };
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-    window.openRegisterModal = () => document.getElementById('registerModal').style.display = 'flex';
-    window.registerUser = async () => { /* ... */ };
+    let currentType = ""; 
+    let currentTargetName = "";
+
+    const getTodayStr = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // 모달 열기 (애니메이션 적용)
+    window.openCombinedModal = (type, targetName = "") => {
+        currentType = type;
+        currentTargetName = targetName;
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+        
+        const title = document.getElementById('modalTitle');
+        if(type === 'attendance') title.innerText = "출석 체크";
+        else if(type === 'meal') title.innerText = `[${targetName}] 식사 신청`;
+        else if(type === 'snack') title.innerText = "부식 신청";
+        
+        const modal = document.getElementById('loginModal');
+        modal.style.display = 'flex';
+        // 약간의 딜레이 후 show 클래스 추가 (fade in 효과)
+        setTimeout(() => modal.classList.add('show'), 10);
+    };
+
+    window.closeModal = (id) => {
+        const modal = document.getElementById(id);
+        modal.classList.remove('show');
+        // 애니메이션 끝난 후 display none
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    window.openRegisterModal = () => {
+        const modal = document.getElementById('registerModal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    };
+
+    window.processAllInOne = async () => {
+        const rawId = document.getElementById('loginId').value.replace(/\s/g, ''); 
+        const pw = document.getElementById('loginPw').value;
+        const selectedAct = document.querySelector('input[name="activity"]:checked').value;
+        const idMatch = rawId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+
+        if(!idMatch) return alert("아이디 형식을 확인하세요.");
+        const name = idMatch[1];
+        const birth = idMatch[2];
+
+        try {
+            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
+            const snapshot = await getDocs(q);
+            if(snapshot.empty) return alert("정보가 틀립니다.");
+
+            const userDoc = snapshot.docs[0];
+            const userId = userDoc.id;
+            const userData = userDoc.data();
+            const today = getTodayStr();
+
+            let collectionName = "";
+            let dataPayload = { student_id: userId, student_name: userData.name, activity: selectedAct, date: today, timestamp: Timestamp.now() };
+            let msg = "";
+
+            if(currentType === 'attendance') {
+                collectionName = "attendance";
+                msg = `${userData.name}님, [${selectedAct}] 출석 완료!`;
+            } else if(currentType === 'meal') {
+                const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
+                const checkSnap = await getDocs(checkQ);
+                
+                let isBlocked = false;
+                checkSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.status === 'applied' || d.status === 'approved') isBlocked = true;
+                });
+
+                if(isBlocked) return alert("현재 진행 중인 식사 신청이 있습니다.");
+
+                collectionName = "meal_applications";
+                dataPayload.store_name = currentTargetName;
+                dataPayload.status = "applied"; 
+                msg = `${userData.name}님, [${currentTargetName}] 신청 완료!\n식당에 가서 QR코드를 찍어주세요.`;
+
+            } else if(currentType === 'snack') {
+                collectionName = "snacks";
+                dataPayload.item = "간식 세트";
+                msg = "부식 신청 완료!";
+            }
+
+            await addDoc(collection(db, collectionName), dataPayload);
+            alert(msg);
+            closeModal('loginModal');
+
+        } catch(e) { console.error(e); alert("오류 발생"); }
+    };
+
+    window.registerUser = async () => {
+        const name = document.getElementById('regName').value;
+        const birth = document.getElementById('regBirth').value;
+        const pw = document.getElementById('regPw').value;
+        const pwConfirm = document.getElementById('regPwConfirm').value;
+        if(!name || birth.length !== 6 || !pw) return alert("정보 확인");
+        if(pw !== pwConfirm) return alert("비번 불일치");
+        try {
+            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
+            const snap = await getDocs(q);
+            if(!snap.empty) return alert("이미 가입됨");
+            await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
+            alert("가입 완료"); closeModal('registerModal');
+        } catch(e) { alert("오류"); }
+    };
 </script>
+</body>
+</html>
