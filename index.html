@@ -1,120 +1,13 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>노원구 꿈드림 - 센터 키오스크</title>
-    <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { color: #111; margin-bottom: 5px; font-size: 28px; }
-        .subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
-        .main-grid, .meal-grid, .ad-grid { display: grid; gap: 15px; margin-bottom: 20px; }
-        .main-grid { grid-template-columns: 1fr 1fr; }
-        .meal-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-        .ad-grid { grid-template-columns: 1fr 1fr; }
-        
-        .btn { border: none; border-radius: 16px; cursor: pointer; transition: transform 0.1s; font-weight: bold; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .btn:active { transform: scale(0.96); }
-        .btn-big { height: 140px; font-size: 24px; }
-        .btn-attendance { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .btn-snack { background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%); }
-        .btn-meal { height: 80px; font-size: 18px; background-color: #fff; color: #333; border: 2px solid #eee; }
-        .btn-meal:hover { border-color: #333; background-color: #fafafa; }
-        .btn-meal:active { background-color: #e0e0e0; }
-        .btn-disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; }
-        .btn-ad { height: 120px; background-size: cover; background-position: center; border-radius: 16px; border: 1px solid #ddd; }
-        .btn-ad span { background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; margin-top: auto; margin-bottom: 10px; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 380px; text-align: left; animation: slideUp 0.3s; }
-        @keyframes slideUp { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-        .modal h2 { margin-top: 0; text-align: center; color: #333; margin-bottom: 15px; }
-        .radio-group { display: flex; gap: 8px; margin-bottom: 25px; }
-        .radio-item { flex: 1; }
-        .radio-item input { display: none; }
-        .radio-item label { display: flex; align-items: center; justify-content: center; height: 55px; background: #f8f9fa; border-radius: 12px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; border: 2px solid #eee; transition: 0.2s; white-space: nowrap; }
-        .radio-item input:checked + label { background: #e3f2fd; border-color: #2196F3; color: #1976D2; }
-        .input-group { margin-bottom: 12px; }
-        .input-group input { width: 90%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; background: #f9f9f9; }
-        .btn-confirm { width: 100%; background: #333; color: white; padding: 16px; border: none; border-radius: 12px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .close-btn { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; color: #999; }
-        .top-link { text-align: right; margin-bottom: 15px; }
-        .top-link a { text-decoration: none; color: #888; font-size: 13px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 15px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="top-link"><a href="#" onclick="openRegisterModal()">🆕 신규 회원가입</a></div>
-    <h1>🌱 노원구 꿈드림</h1>
-    <p class="subtitle">오늘도 힘내서 꿈을 향해!</p>
-
-    <div class="main-grid">
-        <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
-            <span style="font-size: 40px; margin-bottom: 10px;">📅</span> 출석하기
-        </button>
-        <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
-            <span style="font-size: 40px; margin-bottom: 10px;">🥪</span> 부식 신청
-        </button>
-    </div>
-
-    <h3 style="text-align: left; margin-left: 5px;">🍚 오늘 뭐 먹지? (식사 신청)</h3>
-    <div class="meal-grid">
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리분식</button>
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
-        <button class="btn btn-meal btn-disabled">준비중</button>
-    </div>
-
-    <div class="ad-grid">
-        <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="btn btn-ad"><span>AD</span></div></a>
-        <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="btn btn-ad"><span>AD</span></div></a>
-    </div>
-</div>
-
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
-        <h2 id="modalTitle">인증 및 신청</h2>
-        <div id="activitySection">
-            <div style="text-align:center; font-size:14px; margin-bottom:10px; color:#666;">✨ 오늘의 활동 선택 (필수)</div>
-            <div class="radio-group">
-                <div class="radio-item"><input type="radio" id="act1" name="activity" value="기초소양교육" checked><label for="act1">📚 기초소양</label></div>
-                <div class="radio-item"><input type="radio" id="act2" name="activity" value="프로그램"><label for="act2">🎨 프로그램</label></div>
-                <div class="radio-item"><input type="radio" id="act3" name="activity" value="스터디카페"><label for="act3">✏️ 스터디</label></div>
-            </div>
-        </div>
-        <div class="input-group"><input type="text" id="loginId" placeholder="아이디 (이름+생년월일)"></div>
-        <div class="input-group"><input type="password" id="loginPw" placeholder="비밀번호"></div>
-        <button class="btn-confirm" onclick="processAllInOne()">신청 완료하기</button>
-    </div>
-</div>
-
-<div id="registerModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
-        <h2>회원가입</h2>
-        <div class="input-group"><input type="text" id="regName" placeholder="이름"></div>
-        <div class="input-group"><input type="tel" id="regBirth" maxlength="6" placeholder="생년월일 6자리"></div>
-        <div class="input-group"><input type="password" id="regPw" placeholder="비밀번호"></div>
-        <div class="input-group"><input type="password" id="regPwConfirm" placeholder="비밀번호 확인"></div>
-        <button class="btn-confirm" onclick="registerUser()">가입하기</button>
-    </div>
-</div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // [중요] getDoc, doc 추가
+    import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const AD_CONFIG = {
-        ad1: { image: "https://via.placeholder.com/300x150/333/fff?text=Notice", link: "https://www.google.com" },
-        ad2: { image: "https://via.placeholder.com/300x150/FF9800/fff?text=Event", link: "https://www.naver.com" }
+    // 1. 기본 광고 (DB 로딩 전이나 없을 때 표시)
+    const DEFAULT_ADS = {
+        ad1: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" },
+        ad2: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" }
     };
-    document.getElementById('ad1').style.backgroundImage = `url('${AD_CONFIG.ad1.image}')`;
-    document.getElementById('ad1Link').href = AD_CONFIG.ad1.link;
-    document.getElementById('ad2').style.backgroundImage = `url('${AD_CONFIG.ad2.image}')`;
-    document.getElementById('ad2Link').href = AD_CONFIG.ad2.link;
 
     const firebaseConfig = {
       apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
@@ -127,107 +20,45 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let currentType = ""; 
-    let currentTargetName = "";
-
-    // 한국 시간 오늘 날짜 구하기
-    const getTodayStr = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    window.openCombinedModal = (type, targetName = "") => {
-        currentType = type;
-        currentTargetName = targetName;
-        document.getElementById('loginId').value = '';
-        document.getElementById('loginPw').value = '';
-        const title = document.getElementById('modalTitle');
-        if(type === 'attendance') title.innerText = "출석 체크";
-        else if(type === 'meal') title.innerText = `[${targetName}] 식사 신청`;
-        else if(type === 'snack') title.innerText = "부식 신청";
-        document.getElementById('loginModal').style.display = 'flex';
-    };
-
-    window.processAllInOne = async () => {
-        const rawId = document.getElementById('loginId').value.replace(/\s/g, ''); 
-        const pw = document.getElementById('loginPw').value;
-        const selectedAct = document.querySelector('input[name="activity"]:checked').value;
-        const idMatch = rawId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
-
-        if(!idMatch) return alert("아이디 형식을 확인하세요.");
-        const name = idMatch[1];
-        const birth = idMatch[2];
-
+    // [신규] 광고 불러오기 함수
+    const loadAds = async () => {
         try {
-            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
-            const snapshot = await getDocs(q);
-            if(snapshot.empty) return alert("정보가 틀립니다.");
+            const docRef = doc(db, "settings", "ads");
+            const docSnap = await getDoc(docRef);
 
-            const userDoc = snapshot.docs[0];
-            const userId = userDoc.id;
-            const userData = userDoc.data();
-            const today = getTodayStr();
-
-            let collectionName = "";
-            let dataPayload = { student_id: userId, student_name: userData.name, activity: selectedAct, date: today, timestamp: Timestamp.now() };
-            let msg = "";
-
-            if(currentType === 'attendance') {
-                collectionName = "attendance";
-                msg = `${userData.name}님, [${selectedAct}] 출석 완료!`;
-            } else if(currentType === 'meal') {
-                // [수정] 오늘 이미 "진행 중(신청/승인)"인 건이 있는지 확인 (완료된 건은 무시 = 중복 허용)
-                const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
-                const checkSnap = await getDocs(checkQ);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // DB 데이터가 있으면 적용
+                if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
+                if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
                 
-                let isBlocked = false;
-                checkSnap.forEach(doc => {
-                    const d = doc.data();
-                    if (d.status === 'applied' || d.status === 'approved') {
-                        isBlocked = true;
-                    }
-                });
-
-                if(isBlocked) return alert("현재 진행 중인 식사 신청이 있습니다.\n(아직 식당 결제를 안 하셨습니다)");
-
-                collectionName = "meal_applications";
-                dataPayload.store_name = currentTargetName;
-                dataPayload.status = "applied"; // 신청 완료 상태
-                msg = `${userData.name}님, [${currentTargetName}] 신청 완료!\n식당에 가서 QR코드를 찍어주세요.`;
-
-            } else if(currentType === 'snack') {
-                collectionName = "snacks";
-                dataPayload.item = "간식 세트";
-                msg = "부식 신청 완료!";
+                if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
+                if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
+            } else {
+                // 없으면 기본값
+                applyDefaultAds();
             }
-
-            await addDoc(collection(db, collectionName), dataPayload);
-            alert(msg);
-            closeModal('loginModal');
-
-        } catch(e) { console.error(e); alert("오류 발생"); }
+        } catch(e) {
+            console.error("광고 로딩 오류:", e);
+            applyDefaultAds();
+        }
     };
 
+    const applyDefaultAds = () => {
+        document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
+        document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
+    };
+
+    // 초기화 시 실행
+    loadAds();
+
+    // ... (이하 기존 로직 동일: currentType, openCombinedModal, processAllInOne, registerUser 등) ...
+    // 지면상 생략, 기존 index.html의 나머지 스크립트는 그대로 유지하세요.
+    
+    let currentType = ""; let currentTargetName = "";
+    window.openCombinedModal = (type, targetName = "") => { /* ... */ document.getElementById('loginModal').style.display = 'flex'; };
+    window.processAllInOne = async () => { /* ... 기존과 동일 ... */ };
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
     window.openRegisterModal = () => document.getElementById('registerModal').style.display = 'flex';
-    window.registerUser = async () => { /* 회원가입 로직 유지 (생략) */ 
-        const name = document.getElementById('regName').value;
-        const birth = document.getElementById('regBirth').value;
-        const pw = document.getElementById('regPw').value;
-        const pwConfirm = document.getElementById('regPwConfirm').value;
-        if(!name || birth.length !== 6 || !pw) return alert("정보 확인");
-        if(pw !== pwConfirm) return alert("비번 불일치");
-        try {
-            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
-            const snap = await getDocs(q);
-            if(!snap.empty) return alert("이미 가입됨");
-            await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
-            alert("가입 완료"); closeModal('registerModal');
-        } catch(e) { alert("오류"); }
-    };
+    window.registerUser = async () => { /* ... */ };
 </script>
-</body>
-</html>
