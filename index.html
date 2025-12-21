@@ -20,65 +20,86 @@
         }
 
         .container { 
-            width: 100%; max-width: 500px; /* 폭을 살짝 줄여서 한눈에 들어오게 */
+            width: 100%; max-width: 500px; 
             background: rgba(255, 255, 255, 0.95); 
             padding: 30px; border-radius: 30px; 
             box-shadow: var(--card-shadow); backdrop-filter: blur(10px);
             position: relative;
         }
         
-        /* 상단 영역 컴팩트하게 */
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { color: #2d3436; margin: 0; font-size: 24px; letter-spacing: -0.5px; }
-        .header p { color: #636e72; margin: 5px 0 0 0; font-size: 14px; }
-        .top-link { position: absolute; top: 20px; right: 25px; }
-        .top-link a { text-decoration: none; color: #636e72; font-size: 12px; font-weight: 600; background: #dfe6e9; padding: 5px 10px; border-radius: 15px; }
+        /* 상단 헤더 (수정됨) */
+        .header { text-align: center; margin-bottom: 25px; margin-top: 10px; }
+        .header h1 { color: #2d3436; margin: 0; font-size: 26px; letter-spacing: -0.5px; font-weight: 800; }
+        
+        /* 좌측 상단: 튜토리얼 링크 */
+        .top-left-link { position: absolute; top: 20px; left: 25px; }
+        .top-left-link a { 
+            text-decoration: none; color: #fff; font-size: 12px; font-weight: 700; 
+            background: #FF7675; padding: 6px 12px; border-radius: 20px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .top-left-link a:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
-        /* 메인 버튼 (높이 축소) */
+        /* 우측 상단: 신규가입 링크 */
+        .top-right-link { position: absolute; top: 20px; right: 25px; }
+        .top-right-link a { 
+            text-decoration: none; color: #636e72; font-size: 12px; font-weight: 600; 
+            background: #dfe6e9; padding: 6px 12px; border-radius: 20px; transition: 0.2s;
+        }
+        .top-right-link a:hover { background: #b2bec3; color: #2d3436; }
+
+        /* 메인 버튼 */
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .btn { border: none; border-radius: 18px; cursor: pointer; transition: transform 0.1s; font-weight: 700; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .btn:active { transform: scale(0.96); }
         
         .btn-big { 
-            height: 110px; /* 높이 줄임 (기존 150) */
-            font-size: 20px; display: flex; flex-direction: row; /* 가로 배치로 변경 */
+            height: 110px; font-size: 20px; display: flex; flex-direction: row; 
             align-items: center; justify-content: center; gap: 10px;
         }
         .btn-attendance { background: linear-gradient(135deg, #6C5CE7, #8e44ad); }
         .btn-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
 
-        /* 급식 버튼 (높이 축소) */
+        /* 급식 버튼 */
         h3 { color: #2d3436; margin: 0 0 10px 5px; font-size: 16px; display: flex; align-items: center; gap: 5px; }
         .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .btn-meal { height: 60px; font-size: 15px; background-color: #fff; color: #2d3436; border: 2px solid #f1f2f6; } /* 높이 줄임 (기존 90) */
+        .btn-meal { height: 60px; font-size: 15px; background-color: #fff; color: #2d3436; border: 2px solid #f1f2f6; }
         .btn-meal:hover { border-color: var(--primary-color); color: var(--primary-color); background: #fdfdfd; }
         .btn-disabled { background-color: #dfe6e9; color: #b2bec3; cursor: not-allowed; border: none; }
 
-        /* [핵심] 광고 그리드 (4:5 비율) */
+        /* 광고 그리드 */
         .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn-ad { 
-            width: 100%;
-            /* aspect-ratio가 핵심: 가로가 4일 때 세로는 5 */
-            aspect-ratio: 4 / 5; 
+            width: 100%; aspect-ratio: 4 / 5; 
             background-size: cover; background-position: center; 
             border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);
             transition: transform 0.2s;
         }
         .btn-ad:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
-        .btn-ad span { 
-            position: absolute; top: 10px; left: 10px; /* 위치 변경 (왼쪽 상단) */
-            background: rgba(0,0,0,0.6); color: white; padding: 3px 8px; 
-            border-radius: 10px; font-size: 10px; font-weight: bold; backdrop-filter: blur(4px);
-        }
 
-        /* 모달 스타일 (기존 유지) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 52, 54, 0.4); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+        /* 모달 공통 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 52, 54, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
         .modal.show { opacity: 1; }
         .modal-content { background: white; padding: 35px 30px; border-radius: 30px; width: 85%; max-width: 380px; text-align: left; transform: translateY(20px); transition: transform 0.3s; position: relative; }
         .modal.show .modal-content { transform: translateY(0); }
-        .close-btn { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 28px; color: #b2bec3; }
+        .close-btn { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 28px; color: #b2bec3; z-index: 10; }
         .modal h2 { margin: 0 0 20px 0; text-align: center; color: #2d3436; font-size: 22px; }
         
+        /* 튜토리얼 모달 전용 스타일 (반응형 비디오) */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 비율 */
+            height: 0;
+            overflow: hidden;
+            border-radius: 15px;
+            background: #000;
+        }
+        .video-wrapper iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* 폼 요소들 */
         .radio-group { display: flex; gap: 8px; margin-bottom: 25px; }
         .radio-item { flex: 1; }
         .radio-item input { display: none; }
@@ -95,11 +116,16 @@
 <body>
 
 <div class="container">
-    <div class="top-link"><a href="#" onclick="openRegisterModal()">🆕 가입</a></div>
+    <div class="top-left-link">
+        <a href="#" onclick="openTutorialModal()">▶ 급식 튜토리얼</a>
+    </div>
+
+    <div class="top-right-link">
+        <a href="#" onclick="openRegisterModal()">🆕 가입</a>
+    </div>
     
     <div class="header">
-        <h1>🌱 노원구 꿈드림</h1>
-        <p>오늘도 힘내서 꿈을 향해!</p>
+        <h1>노원구 꿈드림</h1>
     </div>
 
     <div class="main-grid">
@@ -122,8 +148,17 @@
     </div>
 
     <div class="ad-grid">
-        <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="btn btn-ad"><span>AD</span></div></a>
-        <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="btn btn-ad"><span>AD</span></div></a>
+        <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="btn btn-ad"><span></span></div></a>
+        <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="btn btn-ad"><span></span></div></a>
+    </div>
+</div>
+
+<div id="tutorialModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; background: transparent; box-shadow: none; padding: 0;">
+        <span class="close-btn" style="color: white; top: -30px; right: 0;" onclick="closeTutorialModal()">&times;</span>
+        <div class="video-wrapper">
+            <iframe id="youtubeFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
     </div>
 </div>
 
@@ -162,8 +197,8 @@
     import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const DEFAULT_ADS = {
-        ad1: { image: "https://via.placeholder.com/400x500/333/fff?text=Poster+1", link: "#" },
-        ad2: { image: "https://via.placeholder.com/400x500/6C5CE7/fff?text=Poster+2", link: "#" }
+        ad1: { image: "https://via.placeholder.com/400x500/333/fff?text=Ad+Area+1", link: "#" },
+        ad2: { image: "https://via.placeholder.com/400x500/6C5CE7/fff?text=Ad+Area+2", link: "#" }
     };
 
     const firebaseConfig = {
@@ -197,9 +232,37 @@
     };
     loadAds();
 
+    // ------------------------------------
+    // [신규] 유튜브 튜토리얼 팝업 기능
+    // ------------------------------------
+    const TUTORIAL_URL = "https://www.youtube.com/embed/IWwxdhD54uU?autoplay=1";
+    
+    window.openTutorialModal = () => {
+        const modal = document.getElementById('tutorialModal');
+        const iframe = document.getElementById('youtubeFrame');
+        
+        iframe.src = TUTORIAL_URL; // 팝업 열 때 영상 주소 주입 (자동재생)
+        
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    };
+
+    window.closeTutorialModal = () => {
+        const modal = document.getElementById('tutorialModal');
+        const iframe = document.getElementById('youtubeFrame');
+        
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            iframe.src = ""; // [중요] 닫을 때 주소를 지워서 소리(재생)를 멈춤
+        }, 300);
+    };
+
+    // ------------------------------------
+    // 기존 기능들
+    // ------------------------------------
     let currentType = ""; 
     let currentTargetName = "";
-
     const getTodayStr = () => {
         const now = new Date();
         const year = now.getFullYear();
