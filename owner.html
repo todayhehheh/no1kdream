@@ -19,7 +19,7 @@
         .header h1 { margin: 0; font-size: 26px; color: #2C3E50; }
         .header p { margin: 5px 0 0 0; color: #7F8C8D; font-size: 15px; }
 
-        /* 금액 카드 (가장 중요) */
+        /* 금액 카드 */
         .total-card {
             background: white;
             padding: 30px;
@@ -52,7 +52,7 @@
             display: flex; flex-direction: column; gap: 12px;
         }
 
-        /* 개별 리스트 아이템 (카드형) */
+        /* 개별 리스트 아이템 */
         .log-item {
             background: white;
             padding: 20px;
@@ -70,7 +70,7 @@
         .log-date { font-size: 13px; color: #95A5A6; }
         .log-name { font-size: 17px; font-weight: 700; color: #2C3E50; }
         
-        .log-amount { font-size: 18px; font-weight: 700; color: #2196F3; } /* 파란색 강조 */
+        .log-amount { font-size: 18px; font-weight: 700; color: #2196F3; } 
 
         /* 데이터 없음 상태 */
         .empty-state { text-align: center; padding: 50px 20px; color: #BDC3C7; }
@@ -85,7 +85,7 @@
 </div>
 
 <div class="total-card">
-    <div class="total-label">센터에서 입금될 예정 금액</div>
+    <div class="total-label">결제 예정 금액</div>
     <div class="total-amount" id="totalAmount">0<span>원</span></div>
 </div>
 
@@ -123,7 +123,6 @@
         }
         document.getElementById('storeName').innerText = myStore;
 
-        // DB 조회: 해당 식당의 '완료된 결제' 중 '정산되지 않은(미정산)' 것만 가져옴
         const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("status", "==", "completed"));
         const snap = await getDocs(q);
 
@@ -133,7 +132,7 @@
 
         snap.forEach(doc => {
             const d = doc.data();
-            // is_settled가 true가 아닌 것 (미정산)
+            // 미정산(is_settled !== true) 건만 표시
             if(d.is_settled !== true) {
                 list.push(d);
                 total += Number(d.amount);
@@ -141,7 +140,7 @@
             }
         });
 
-        // 날짜 내림차순 정렬 (최신순)
+        // 날짜 내림차순 정렬
         list.sort((a,b) => {
             if(a.date !== b.date) return b.date.localeCompare(a.date);
             return b.timestamp - a.timestamp;
@@ -168,14 +167,15 @@
                 ? item.student_name[0] + "*" + item.student_name.substring(2)
                 : item.student_name[0] + "*";
             
-            // 날짜 포맷팅 (2025-12-21 -> 12.21)
+            // 날짜 포맷 (12.21)
             const shortDate = item.date.substring(5).replace('-', '.');
 
+            // [수정] 이름 뒤에 '학생' 제거
             listBox.innerHTML += `
                 <div class="log-item">
                     <div class="log-left">
                         <span class="log-date">${shortDate}</span>
-                        <span class="log-name">${maskedName} 학생</span>
+                        <span class="log-name">${maskedName}</span>
                     </div>
                     <div class="log-amount">${Number(item.amount).toLocaleString()}원</div>
                 </div>
