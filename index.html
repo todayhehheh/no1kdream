@@ -8,155 +8,94 @@
     <style>
         :root {
             --primary-color: #6C5CE7;
-            --primary-light: #A29BFE;
-            --accent-color: #00B894;
             --bg-color: #F0F2F5;
             --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
-            --modal-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
 
         body { 
             font-family: 'Pretendard', sans-serif; 
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
-            margin: 0; 
-            padding: 20px; 
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0; padding: 20px; 
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
         }
 
         .container { 
-            width: 100%;
-            max-width: 550px; 
+            width: 100%; max-width: 500px; /* 폭을 살짝 줄여서 한눈에 들어오게 */
             background: rgba(255, 255, 255, 0.95); 
-            padding: 35px; 
-            border-radius: 30px; 
-            box-shadow: var(--card-shadow); 
-            backdrop-filter: blur(10px);
+            padding: 30px; border-radius: 30px; 
+            box-shadow: var(--card-shadow); backdrop-filter: blur(10px);
             position: relative;
         }
         
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #2d3436; margin: 0 0 8px 0; font-size: 28px; letter-spacing: -0.5px; }
-        .header p { color: #636e72; margin: 0; font-size: 15px; }
-
-        /* 탑 링크 */
+        /* 상단 영역 컴팩트하게 */
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: #2d3436; margin: 0; font-size: 24px; letter-spacing: -0.5px; }
+        .header p { color: #636e72; margin: 5px 0 0 0; font-size: 14px; }
         .top-link { position: absolute; top: 20px; right: 25px; }
-        .top-link a { 
-            text-decoration: none; color: #636e72; font-size: 13px; font-weight: 600; 
-            background: #dfe6e9; padding: 6px 12px; border-radius: 20px; transition: 0.2s;
-        }
-        .top-link a:hover { background: #b2bec3; color: #2d3436; }
+        .top-link a { text-decoration: none; color: #636e72; font-size: 12px; font-weight: 600; background: #dfe6e9; padding: 5px 10px; border-radius: 15px; }
 
-        /* 메인 그리드 */
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        /* 메인 버튼 (높이 축소) */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .btn { border: none; border-radius: 18px; cursor: pointer; transition: transform 0.1s; font-weight: 700; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn:active { transform: scale(0.96); }
         
-        .btn { 
-            border: none; border-radius: 20px; cursor: pointer; 
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            font-weight: 700; color: white; position: relative; overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn:active { transform: scale(0.96); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 7px 14px rgba(0,0,0,0.15); }
-
         .btn-big { 
-            height: 150px; font-size: 22px; display: flex; flex-direction: column; 
+            height: 110px; /* 높이 줄임 (기존 150) */
+            font-size: 20px; display: flex; flex-direction: row; /* 가로 배치로 변경 */
             align-items: center; justify-content: center; gap: 10px;
         }
         .btn-attendance { background: linear-gradient(135deg, #6C5CE7, #8e44ad); }
         .btn-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
 
-        /* 급식 그리드 */
-        h3 { color: #2d3436; margin: 0 0 15px 5px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
-        .btn-meal { 
-            height: 90px; font-size: 17px; background-color: #fff; color: #2d3436; 
-            border: 2px solid #f1f2f6; 
-        }
+        /* 급식 버튼 (높이 축소) */
+        h3 { color: #2d3436; margin: 0 0 10px 5px; font-size: 16px; display: flex; align-items: center; gap: 5px; }
+        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn-meal { height: 60px; font-size: 15px; background-color: #fff; color: #2d3436; border: 2px solid #f1f2f6; } /* 높이 줄임 (기존 90) */
         .btn-meal:hover { border-color: var(--primary-color); color: var(--primary-color); background: #fdfdfd; }
-        .btn-disabled { background-color: #dfe6e9; color: #b2bec3; cursor: not-allowed; border: none; box-shadow: none; }
-        .btn-disabled:hover { transform: none; }
+        .btn-disabled { background-color: #dfe6e9; color: #b2bec3; cursor: not-allowed; border: none; }
 
-        /* 광고 그리드 */
+        /* [핵심] 광고 그리드 (4:5 비율) */
         .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn-ad { 
-            height: 120px; background-size: cover; background-position: center; 
-            border-radius: 20px; position: relative; border: 1px solid rgba(0,0,0,0.05);
+            width: 100%;
+            /* aspect-ratio가 핵심: 가로가 4일 때 세로는 5 */
+            aspect-ratio: 4 / 5; 
+            background-size: cover; background-position: center; 
+            border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s;
         }
+        .btn-ad:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         .btn-ad span { 
-            position: absolute; bottom: 10px; right: 10px;
-            background: rgba(0,0,0,0.5); color: white; padding: 4px 8px; 
-            border-radius: 12px; font-size: 11px; backdrop-filter: blur(4px);
+            position: absolute; top: 10px; left: 10px; /* 위치 변경 (왼쪽 상단) */
+            background: rgba(0,0,0,0.6); color: white; padding: 3px 8px; 
+            border-radius: 10px; font-size: 10px; font-weight: bold; backdrop-filter: blur(4px);
         }
 
-        /* === 모달 디자인 (Pretty Popups) === */
-        .modal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(45, 52, 54, 0.4); backdrop-filter: blur(5px);
-            justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        .modal.show { opacity: 1; } /* JS로 제어 */
-
-        .modal-content { 
-            background: white; padding: 40px 30px; border-radius: 30px; width: 85%; max-width: 400px; 
-            text-align: left; box-shadow: var(--modal-shadow);
-            transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-        }
+        /* 모달 스타일 (기존 유지) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 52, 54, 0.4); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal.show { opacity: 1; }
+        .modal-content { background: white; padding: 35px 30px; border-radius: 30px; width: 85%; max-width: 380px; text-align: left; transform: translateY(20px); transition: transform 0.3s; position: relative; }
         .modal.show .modal-content { transform: translateY(0); }
-
-        .close-btn { 
-            position: absolute; top: 20px; right: 25px; 
-            cursor: pointer; font-size: 28px; color: #b2bec3; transition: 0.2s; 
-        }
-        .close-btn:hover { color: #2d3436; transform: rotate(90deg); }
-
-        .modal h2 { margin: 0 0 25px 0; text-align: center; color: #2d3436; font-size: 24px; }
-
-        /* 활동 선택 라디오 (카드형) */
-        .section-label { text-align: center; font-size: 14px; color: #636e72; margin-bottom: 10px; font-weight: 600; }
-        .radio-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        .close-btn { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 28px; color: #b2bec3; }
+        .modal h2 { margin: 0 0 20px 0; text-align: center; color: #2d3436; font-size: 22px; }
+        
+        .radio-group { display: flex; gap: 8px; margin-bottom: 25px; }
         .radio-item { flex: 1; }
         .radio-item input { display: none; }
-        .radio-item label { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 80px; background: #f1f2f6; border-radius: 16px; 
-            font-size: 14px; font-weight: 700; color: #636e72; cursor: pointer; 
-            border: 2px solid transparent; transition: 0.2s; 
-        }
-        .radio-item label span { font-size: 24px; margin-bottom: 5px; } /* 이모지 크기 */
-        .radio-item input:checked + label { 
-            background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); 
-            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
-        }
-
-        /* 입력창 스타일 */
-        .input-group { margin-bottom: 15px; }
-        .input-group input { 
-            width: 100%; padding: 16px; border: 2px solid #f1f2f6; border-radius: 16px; 
-            font-size: 16px; outline: none; background: #fdfdfd; transition: 0.2s; box-sizing: border-box;
-            font-family: 'Pretendard', sans-serif;
-        }
+        .radio-item label { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70px; background: #f1f2f6; border-radius: 14px; font-size: 13px; font-weight: 700; color: #636e72; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .radio-item label span { font-size: 20px; margin-bottom: 3px; }
+        .radio-item input:checked + label { background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); }
+        
+        .input-group { margin-bottom: 12px; }
+        .input-group input { width: 100%; padding: 14px; border: 2px solid #f1f2f6; border-radius: 14px; font-size: 16px; outline: none; background: #fdfdfd; box-sizing: border-box; }
         .input-group input:focus { border-color: var(--primary-color); background: white; }
-        .input-group input::placeholder { color: #b2bec3; }
-
-        /* 확인 버튼 */
-        .btn-confirm { 
-            width: 100%; background: #2d3436; color: white; padding: 18px; 
-            border: none; border-radius: 16px; font-size: 17px; font-weight: 700; 
-            cursor: pointer; margin-top: 10px; transition: 0.2s;
-        }
-        .btn-confirm:hover { background: #000; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-
+        .btn-confirm { width: 100%; background: #2d3436; color: white; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="top-link"><a href="#" onclick="openRegisterModal()">🆕 신규가입</a></div>
+    <div class="top-link"><a href="#" onclick="openRegisterModal()">🆕 가입</a></div>
     
     <div class="header">
         <h1>🌱 노원구 꿈드림</h1>
@@ -165,16 +104,16 @@
 
     <div class="main-grid">
         <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
-            <span style="font-size: 40px;">📅</span>
+            <span style="font-size: 32px;">📅</span>
             <span>출석하기</span>
         </button>
         <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
-            <span style="font-size: 40px;">🥪</span>
+            <span style="font-size: 32px;">🥪</span>
             <span>부식 신청</span>
         </button>
     </div>
 
-    <h3>🍚 오늘 뭐 먹지? (식사 신청)</h3>
+    <h3>🍚 오늘 뭐 먹지?</h3>
     <div class="meal-grid">
         <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
         <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
@@ -192,31 +131,16 @@
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
         <h2 id="modalTitle">인증 및 신청</h2>
-        
         <div id="activitySection">
-            <div class="section-label">✨ 오늘의 활동을 선택해주세요</div>
+            <div style="text-align:center; font-size:13px; margin-bottom:8px; color:#666; font-weight:bold;">✨ 오늘의 활동을 선택해주세요</div>
             <div class="radio-group">
-                <div class="radio-item">
-                    <input type="radio" id="act1" name="activity" value="기초소양교육" checked>
-                    <label for="act1"><span>📚</span>기초소양</label>
-                </div>
-                <div class="radio-item">
-                    <input type="radio" id="act2" name="activity" value="프로그램">
-                    <label for="act2"><span>🎨</span>프로그램</label>
-                </div>
-                <div class="radio-item">
-                    <input type="radio" id="act3" name="activity" value="스터디카페">
-                    <label for="act3"><span>✏️</span>스터디</label>
-                </div>
+                <div class="radio-item"><input type="radio" id="act1" name="activity" value="기초소양교육" checked><label for="act1"><span>📚</span>기초소양</label></div>
+                <div class="radio-item"><input type="radio" id="act2" name="activity" value="프로그램"><label for="act2"><span>🎨</span>프로그램</label></div>
+                <div class="radio-item"><input type="radio" id="act3" name="activity" value="스터디카페"><label for="act3"><span>✏️</span>스터디</label></div>
             </div>
         </div>
-
-        <div class="input-group">
-            <input type="text" id="loginId" placeholder="아이디 (이름+생년월일 6자리)">
-        </div>
-        <div class="input-group">
-            <input type="password" id="loginPw" placeholder="비밀번호">
-        </div>
+        <div class="input-group"><input type="text" id="loginId" placeholder="아이디 (이름+생년월일 6자리)"></div>
+        <div class="input-group"><input type="password" id="loginPw" placeholder="비밀번호"></div>
         <button class="btn-confirm" onclick="processAllInOne()">신청 완료하기</button>
     </div>
 </div>
@@ -238,8 +162,8 @@
     import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const DEFAULT_ADS = {
-        ad1: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" },
-        ad2: { image: "https://via.placeholder.com/300x150/333/fff?text=Loading...", link: "#" }
+        ad1: { image: "https://via.placeholder.com/400x500/333/fff?text=Poster+1", link: "#" },
+        ad2: { image: "https://via.placeholder.com/400x500/6C5CE7/fff?text=Poster+2", link: "#" }
     };
 
     const firebaseConfig = {
@@ -284,7 +208,6 @@
         return `${year}-${month}-${day}`;
     };
 
-    // 모달 열기 (애니메이션 적용)
     window.openCombinedModal = (type, targetName = "") => {
         currentType = type;
         currentTargetName = targetName;
@@ -298,14 +221,12 @@
         
         const modal = document.getElementById('loginModal');
         modal.style.display = 'flex';
-        // 약간의 딜레이 후 show 클래스 추가 (fade in 효과)
         setTimeout(() => modal.classList.add('show'), 10);
     };
 
     window.closeModal = (id) => {
         const modal = document.getElementById(id);
         modal.classList.remove('show');
-        // 애니메이션 끝난 후 display none
         setTimeout(() => modal.style.display = 'none', 300);
     };
 
