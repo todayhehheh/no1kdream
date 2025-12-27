@@ -84,7 +84,22 @@
 </head>
 
 <body>
+<button class="btn-small" style="background:#555; color:white; margin-left:10px;" onclick="registerThisDevice()">🖥️ 현재 기기 키오스크로 등록</button>
 
+<script>
+    // ... 기존 코드 ...
+
+    // [신규] 기기 등록 함수
+    window.registerThisDevice = () => {
+        const pw = prompt("관리자 비밀번호(1388)를 입력하면 이 기기가 키오스크로 등록됩니다.");
+        if(pw === "1388") {
+            localStorage.setItem('kiosk_auth_token', 'dream_center_pc');
+            alert("✅ 등록 완료!\n이제 index.html(키오스크)에 접속하면 정상적으로 화면이 뜹니다.");
+        } else {
+            alert("비밀번호 오류");
+        }
+    };
+</script>
     <div id="loadingOverlay">
         <div class="spinner"></div>
     </div>
@@ -557,3 +572,4 @@
     </script>
 </body>
 </html>
+
