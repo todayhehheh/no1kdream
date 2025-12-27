@@ -4,19 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>노원구 꿈드림 - 센터 키오스크</title>
-    <!-- Shared Style -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* Page Specific Styles for Kiosk */
-        
         .header { margin-bottom: 25px; margin-top: 10px; }
         
         /* Top Links */
-        .top-link-area {
-            display: flex; justify-content: space-between; margin-bottom: 10px;
-        }
+        .top-link-area { display: flex; justify-content: space-between; margin-bottom: 10px; }
         .top-btn {
             text-decoration: none; font-size: 12px; font-weight: 700;
             padding: 8px 16px; border-radius: 20px; 
@@ -81,8 +76,7 @@
         }
         .ad-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
 
-        /* Modal Customization for SweetAlert2 is handled by JS, 
-           but we keep the custom login form style for injecting into Swal */
+        /* SweetAlert Custom Styles */
         .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
         .swal-radio-item { flex: 1; }
         .swal-radio-item input { display: none; }
@@ -97,32 +91,40 @@
             background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); 
             box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
         }
-        
+
+        /* [추가] 차단 화면 스타일 */
+        #blockScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f2f5; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: #333;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Loading Overlay -->
+    <div id="blockScreen">
+        <h1 style="font-size: 60px; margin-bottom: 10px;">🔒</h1>
+        <h2>접근이 제한된 기기입니다.</h2>
+        <p style="color:#666;">센터 관리자에게 기기 등록을 요청하세요.</p>
+    </div>
+
     <div id="loadingOverlay">
         <div class="spinner"></div>
         <p style="margin-top:20px; font-weight:bold; color:#555;">처리중입니다...</p>
     </div>
 
-    <!-- Main Glass Container -->
-    <div class="glass-container">
+    <div class="glass-container" id="mainContent" style="display:none;">
         
-        <!-- Top Links -->
         <div class="top-link-area">
             <a href="#" onclick="openTutorialModal()" class="top-btn point">▶ 급식 튜토리얼</a>
             <a href="#" onclick="openRegisterModal()" class="top-btn">🆕 회원가입</a>
         </div>
 
-        <!-- Header -->
         <div class="header">
             <h1>노원구 꿈드림</h1>
         </div>
 
-        <!-- Main Buttons -->
         <div class="main-grid">
             <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
                 <span style="font-size: 36px;">📅</span>
@@ -134,16 +136,14 @@
             </button>
         </div>
 
-        <!-- Meal Selection -->
         <h3 class="section-title">🍚 오늘 뭐 먹지?</h3>
         <div class="meal-grid">
             <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-            <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
+            <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리분식</button>
             <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
             <button class="btn btn-meal btn-disabled">준비중</button>
         </div>
 
-        <!-- Ads Grid -->
         <div class="ad-grid">
             <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="ad-card"></div></a>
             <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="ad-card"></div></a>
@@ -154,8 +154,27 @@
         import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
         // ============================================
-        // 1. Dynamic Ad Loading Logic (Preserved)
+        // [핵심] 기기 인증 체크 로직
         // ============================================
+        const checkDeviceAuth = () => {
+            const isAuthorized = localStorage.getItem('kiosk_auth_token') === 'dream_center_pc';
+            if (isAuthorized) {
+                // 인증된 기기면 차단 화면 끄고 메인 화면 보여줌
+                document.getElementById('blockScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                loadAds(); // 광고 로딩 시작
+            } else {
+                // 인증 안 된 기기면 차단 화면 유지
+                console.log("미인증 기기 접속 차단됨");
+            }
+        };
+
+        // 페이지 로드 시 즉시 체크
+        checkDeviceAuth();
+
+        // ------------------------------------
+        // 아래는 기존 로직 그대로 유지
+        // ------------------------------------
         const DEFAULT_ADS = {
             ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=Ad+1", link: "#" },
             ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=Ad+2", link: "#" }
@@ -180,14 +199,6 @@
             document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
         };
         
-        // Initialize Ads
-        loadAds();
-
-
-        // ============================================
-        // 2. Shared Logic & SweetAlert2 Integration
-        // ============================================
-
         const getTodayStr = () => {
             const now = new Date();
             const year = now.getFullYear();
@@ -200,9 +211,6 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // ----------------------------------
-        // Feature: Tutorial Modal (YouTube)
-        // ----------------------------------
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
@@ -220,9 +228,6 @@
             });
         };
 
-        // ----------------------------------
-        // Feature: Register Modal
-        // ----------------------------------
         window.openRegisterModal = async () => {
             const { value: formValues } = await Swal.fire({
                 title: '회원가입',
@@ -272,16 +277,12 @@
             }
         };
 
-        // ----------------------------------
-        // Feature: Combined Application Modal
-        // ----------------------------------
         window.openCombinedModal = async (type, targetName = "") => {
             let titleText = "";
             if(type === 'attendance') titleText = "출석 체크";
             else if(type === 'meal') titleText = `[${targetName}] 식사 신청`;
             else if(type === 'snack') titleText = "부식 신청";
 
-            // HTML for custom radio selection
             const activityHtml = `
                 <div style="text-align:center; font-size:13px; margin-bottom:8px; color:#666; font-weight:bold;">✨ 오늘의 활동을 선택해주세요</div>
                 <div class="swal-radio-group">
@@ -308,12 +309,9 @@
                 showCancelButton: true,
                 confirmButtonText: '신청 완료',
                 didOpen: () => {
-                    // Make custom radio buttons work properly
                     const radios = document.querySelectorAll('input[name="activity"]');
                     radios.forEach(r => {
-                        r.addEventListener('change', (e) => {
-                           // Visual toggle logic is handled by CSS, but we ensure it's checked
-                        });
+                        r.addEventListener('change', (e) => {});
                     });
                 },
                 preConfirm: () => {
@@ -343,7 +341,6 @@
             showLoading(true);
 
             try {
-                // 1. Authenticate
                 const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
                 const snapshot = await getDocs(q);
                 
@@ -368,15 +365,12 @@
                 let successTitle = "";
                 let successMsg = "";
 
-                // 2. Process based on Type
                 if(type === 'attendance') {
-                    // Check duplicate? (Optional, skipping for now to allow multiple check-ins if needed, or simple check)
                     collectionName = "attendance";
                     successTitle = "출석 완료";
                     successMsg = `${userData.name}님, [${activity}] 출석되셨습니다!`;
                 } 
                 else if(type === 'meal') {
-                    // Check Duplicate Meal
                     const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
                     const checkSnap = await getDocs(checkQ);
                     let isBlocked = false;
