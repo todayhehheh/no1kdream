@@ -4,373 +4,417 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>노원구 꿈드림 - 센터 키오스크</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root {
-            --primary-color: #6C5CE7;
-            --bg-color: #F0F2F5;
-            --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
-        }
-
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
-            margin: 0; padding: 20px; 
-            min-height: 100vh; display: flex; align-items: center; justify-content: center;
-        }
-
-        .container { 
-            width: 100%; max-width: 500px; 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; border-radius: 30px; 
-            box-shadow: var(--card-shadow); backdrop-filter: blur(10px);
-            position: relative;
-        }
+        /* Page Specific Styles for Kiosk */
         
-        /* 상단 헤더 (수정됨) */
-        .header { text-align: center; margin-bottom: 25px; margin-top: 10px; }
-        .header h1 { color: #2d3436; margin: 0; font-size: 26px; letter-spacing: -0.5px; font-weight: 800; }
+        .header { margin-bottom: 25px; margin-top: 10px; }
         
-        /* 좌측 상단: 튜토리얼 링크 */
-        .top-left-link { position: absolute; top: 20px; left: 25px; }
-        .top-left-link a { 
-            text-decoration: none; color: #fff; font-size: 12px; font-weight: 700; 
-            background: #FF7675; padding: 6px 12px; border-radius: 20px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s;
-            display: flex; align-items: center; gap: 4px;
+        /* Top Links */
+        .top-link-area {
+            display: flex; justify-content: space-between; margin-bottom: 10px;
         }
-        .top-left-link a:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-
-        /* 우측 상단: 신규가입 링크 */
-        .top-right-link { position: absolute; top: 20px; right: 25px; }
-        .top-right-link a { 
-            text-decoration: none; color: #636e72; font-size: 12px; font-weight: 600; 
-            background: #dfe6e9; padding: 6px 12px; border-radius: 20px; transition: 0.2s;
+        .top-btn {
+            text-decoration: none; font-size: 12px; font-weight: 700;
+            padding: 8px 16px; border-radius: 20px; 
+            transition: 0.2s; display: flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: var(--text-gray);
         }
-        .top-right-link a:hover { background: #b2bec3; color: #2d3436; }
+        .top-btn:hover { transform: translateY(-2px); background: white; color: var(--primary-color); }
+        .top-btn.point { background: #ff7675; color: white; }
+        .top-btn.point:hover { background: #d63031; color: white; }
 
-        /* 메인 버튼 */
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .btn { border: none; border-radius: 18px; cursor: pointer; transition: transform 0.1s; font-weight: 700; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn:active { transform: scale(0.96); }
-        
+        /* Big Action Buttons */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .btn-big { 
-            height: 110px; font-size: 20px; display: flex; flex-direction: row; 
-            align-items: center; justify-content: center; gap: 10px;
+            height: 120px; font-size: 20px; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; gap: 8px;
+            color: white; border-radius: 20px;
         }
-        .btn-attendance { background: linear-gradient(135deg, #6C5CE7, #8e44ad); }
-        .btn-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
+        .btn-attendance { 
+            background: linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%);
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
+        }
+        .btn-snack { 
+            background: linear-gradient(135deg, #FF7675 0%, #fab1a0 100%);
+            box-shadow: 0 10px 20px rgba(255, 118, 117, 0.3);
+        }
+        .btn-big:hover { transform: translateY(-5px); filter: brightness(1.05); }
 
-        /* 급식 버튼 */
-        h3 { color: #2d3436; margin: 0 0 10px 5px; font-size: 16px; display: flex; align-items: center; gap: 5px; }
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .btn-meal { height: 60px; font-size: 15px; background-color: #fff; color: #2d3436; border: 2px solid #f1f2f6; }
-        .btn-meal:hover { border-color: var(--primary-color); color: var(--primary-color); background: #fdfdfd; }
-        .btn-disabled { background-color: #dfe6e9; color: #b2bec3; cursor: not-allowed; border: none; }
+        /* Meal Selection */
+        .section-title { 
+            font-size: 17px; color: var(--text-dark); margin: 0 0 15px 5px; 
+            display: flex; align-items: center; gap: 6px;
+        }
+        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .btn-meal { 
+            height: 60px; font-size: 15px; background: white; 
+            color: var(--text-dark); border: 2px solid #edeff2;
+            border-radius: 16px; font-weight: 700;
+        }
+        .btn-meal:hover { 
+            border-color: var(--primary-color); color: var(--primary-color); 
+            background: #f8f9fa; transform: translateY(-2px);
+        }
+        .btn-disabled { 
+            background-color: #f1f2f6; color: #b2bec3; 
+            cursor: not-allowed; border: none; 
+        }
+        .btn-disabled:hover { transform: none; border: none; color: #b2bec3; }
 
-        /* 광고 그리드 */
+        /* Ads */
         .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-ad { 
-            width: 100%; aspect-ratio: 4 / 5; 
+        .ad-card { 
+            width: 100%; aspect-ratio: 4/5; 
             background-size: cover; background-position: center; 
-            border-radius: 18px; border: 1px solid rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            border-radius: 18px; 
+            border: 4px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            cursor: pointer;
         }
-        .btn-ad:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .ad-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
 
-        /* 모달 공통 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 52, 54, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
-        .modal.show { opacity: 1; }
-        .modal-content { background: white; padding: 35px 30px; border-radius: 30px; width: 85%; max-width: 380px; text-align: left; transform: translateY(20px); transition: transform 0.3s; position: relative; }
-        .modal.show .modal-content { transform: translateY(0); }
-        .close-btn { position: absolute; top: 20px; right: 25px; cursor: pointer; font-size: 28px; color: #b2bec3; z-index: 10; }
-        .modal h2 { margin: 0 0 20px 0; text-align: center; color: #2d3436; font-size: 22px; }
-        
-        /* 튜토리얼 모달 전용 스타일 (반응형 비디오) */
-        .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 비율 */
-            height: 0;
-            overflow: hidden;
-            border-radius: 15px;
-            background: #000;
+        /* Modal Customization for SweetAlert2 is handled by JS, 
+           but we keep the custom login form style for injecting into Swal */
+        .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
+        .swal-radio-item { flex: 1; }
+        .swal-radio-item input { display: none; }
+        .swal-radio-item label { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 80px; background: #f8f9fa; border-radius: 12px; 
+            font-size: 13px; font-weight: 700; color: #636e72; cursor: pointer; 
+            border: 2px solid transparent; transition: 0.2s; 
         }
-        .video-wrapper iframe {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        .swal-radio-item label span { font-size: 24px; margin-bottom: 5px; }
+        .swal-radio-item input:checked + label { 
+            background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); 
+            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
         }
-
-        /* 폼 요소들 */
-        .radio-group { display: flex; gap: 8px; margin-bottom: 25px; }
-        .radio-item { flex: 1; }
-        .radio-item input { display: none; }
-        .radio-item label { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70px; background: #f1f2f6; border-radius: 14px; font-size: 13px; font-weight: 700; color: #636e72; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .radio-item label span { font-size: 20px; margin-bottom: 3px; }
-        .radio-item input:checked + label { background: #ede9fe; border-color: var(--primary-color); color: var(--primary-color); }
         
-        .input-group { margin-bottom: 12px; }
-        .input-group input { width: 100%; padding: 14px; border: 2px solid #f1f2f6; border-radius: 14px; font-size: 16px; outline: none; background: #fdfdfd; box-sizing: border-box; }
-        .input-group input:focus { border-color: var(--primary-color); background: white; }
-        .btn-confirm { width: 100%; background: #2d3436; color: white; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="top-left-link">
-        <a href="#" onclick="openTutorialModal()">▶ 급식 튜토리얼</a>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:bold; color:#555;">처리중입니다...</p>
     </div>
 
-    <div class="top-right-link">
-        <a href="#" onclick="openRegisterModal()">🆕 가입</a>
-    </div>
-    
-    <div class="header">
-        <h1>노원구 꿈드림</h1>
-    </div>
+    <!-- Main Glass Container -->
+    <div class="glass-container">
+        
+        <!-- Top Links -->
+        <div class="top-link-area">
+            <a href="#" onclick="openTutorialModal()" class="top-btn point">▶ 급식 튜토리얼</a>
+            <a href="#" onclick="openRegisterModal()" class="top-btn">🆕 회원가입</a>
+        </div>
 
-    <div class="main-grid">
-        <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
-            <span style="font-size: 32px;">📅</span>
-            <span>출석하기</span>
-        </button>
-        <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
-            <span style="font-size: 32px;">🥪</span>
-            <span>부식 신청</span>
-        </button>
-    </div>
+        <!-- Header -->
+        <div class="header">
+            <h1>노원구 꿈드림</h1>
+        </div>
 
-    <h3>🍚 오늘 뭐 먹지?</h3>
-    <div class="meal-grid">
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
-        <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
-        <button class="btn btn-meal btn-disabled">준비중</button>
-    </div>
+        <!-- Main Buttons -->
+        <div class="main-grid">
+            <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
+                <span style="font-size: 36px;">📅</span>
+                <span>출석하기</span>
+            </button>
+            <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
+                <span style="font-size: 36px;">🥪</span>
+                <span>부식 신청</span>
+            </button>
+        </div>
 
-    <div class="ad-grid">
-        <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="btn btn-ad"><span></span></div></a>
-        <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="btn btn-ad"><span></span></div></a>
-    </div>
-</div>
+        <!-- Meal Selection -->
+        <h3 class="section-title">🍚 오늘 뭐 먹지?</h3>
+        <div class="meal-grid">
+            <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
+            <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
+            <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
+            <button class="btn btn-meal btn-disabled">준비중</button>
+        </div>
 
-<div id="tutorialModal" class="modal">
-    <div class="modal-content" style="max-width: 600px; background: transparent; box-shadow: none; padding: 0;">
-        <span class="close-btn" style="color: white; top: -30px; right: 0;" onclick="closeTutorialModal()">&times;</span>
-        <div class="video-wrapper">
-            <iframe id="youtubeFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <!-- Ads Grid -->
+        <div class="ad-grid">
+            <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="ad-card"></div></a>
+            <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="ad-card"></div></a>
         </div>
     </div>
-</div>
 
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
-        <h2 id="modalTitle">인증 및 신청</h2>
-        <div id="activitySection">
-            <div style="text-align:center; font-size:13px; margin-bottom:8px; color:#666; font-weight:bold;">✨ 오늘의 활동을 선택해주세요</div>
-            <div class="radio-group">
-                <div class="radio-item"><input type="radio" id="act1" name="activity" value="기초소양교육" checked><label for="act1"><span>📚</span>기초소양</label></div>
-                <div class="radio-item"><input type="radio" id="act2" name="activity" value="프로그램"><label for="act2"><span>🎨</span>프로그램</label></div>
-                <div class="radio-item"><input type="radio" id="act3" name="activity" value="스터디카페"><label for="act3"><span>✏️</span>스터디</label></div>
-            </div>
-        </div>
-        <div class="input-group"><input type="text" id="loginId" placeholder="아이디 (이름+생년월일 6자리)"></div>
-        <div class="input-group"><input type="password" id="loginPw" placeholder="비밀번호"></div>
-        <button class="btn-confirm" onclick="processAllInOne()">신청 완료하기</button>
-    </div>
-</div>
+    <script type="module">
+        import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
-<div id="registerModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
-        <h2>회원가입</h2>
-        <div class="input-group"><input type="text" id="regName" placeholder="이름 (예: 홍길동)"></div>
-        <div class="input-group"><input type="tel" id="regBirth" maxlength="6" placeholder="생년월일 (예: 080101)"></div>
-        <div class="input-group"><input type="password" id="regPw" placeholder="비밀번호 설정"></div>
-        <div class="input-group"><input type="password" id="regPwConfirm" placeholder="비밀번호 확인"></div>
-        <button class="btn-confirm" onclick="registerUser()">가입하기</button>
-    </div>
-</div>
+        // ============================================
+        // 1. Dynamic Ad Loading Logic (Preserved)
+        // ============================================
+        const DEFAULT_ADS = {
+            ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=Ad+1", link: "#" },
+            ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=Ad+2", link: "#" }
+        };
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        const loadAds = async () => {
+            try {
+                const docRef = doc(db, "settings", "ads");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
+                    if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
+                    if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
+                    if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
+                } else applyDefaultAds();
+            } catch(e) { applyDefaultAds(); }
+        };
 
-    const DEFAULT_ADS = {
-        ad1: { image: "https://via.placeholder.com/400x500/333/fff?text=Ad+Area+1", link: "#" },
-        ad2: { image: "https://via.placeholder.com/400x500/6C5CE7/fff?text=Ad+Area+2", link: "#" }
-    };
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
-      authDomain: "dream-meal-support.firebaseapp.com",
-      projectId: "dream-meal-support",
-      storageBucket: "dream-meal-support.firebasestorage.app",
-      messagingSenderId: "230720243044",
-      appId: "1:230720243044:web:eb38ecc28353a1c70aa671"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // 광고 로드
-    const loadAds = async () => {
-        try {
-            const docRef = doc(db, "settings", "ads");
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
-                if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
-                if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
-                if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
-            } else applyDefaultAds();
-        } catch(e) { applyDefaultAds(); }
-    };
-    const applyDefaultAds = () => {
-        document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
-        document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
-    };
-    loadAds();
-
-    // ------------------------------------
-    // [신규] 유튜브 튜토리얼 팝업 기능
-    // ------------------------------------
-    const TUTORIAL_URL = "https://www.youtube.com/embed/IWwxdhD54uU?autoplay=1";
-    
-    window.openTutorialModal = () => {
-        const modal = document.getElementById('tutorialModal');
-        const iframe = document.getElementById('youtubeFrame');
+        const applyDefaultAds = () => {
+            document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
+            document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
+        };
         
-        iframe.src = TUTORIAL_URL; // 팝업 열 때 영상 주소 주입 (자동재생)
-        
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-    };
+        // Initialize Ads
+        loadAds();
 
-    window.closeTutorialModal = () => {
-        const modal = document.getElementById('tutorialModal');
-        const iframe = document.getElementById('youtubeFrame');
-        
-        modal.classList.remove('show');
-        setTimeout(() => {
-            modal.style.display = 'none';
-            iframe.src = ""; // [중요] 닫을 때 주소를 지워서 소리(재생)를 멈춤
-        }, 300);
-    };
 
-    // ------------------------------------
-    // 기존 기능들
-    // ------------------------------------
-    let currentType = ""; 
-    let currentTargetName = "";
-    const getTodayStr = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+        // ============================================
+        // 2. Shared Logic & SweetAlert2 Integration
+        // ============================================
 
-    window.openCombinedModal = (type, targetName = "") => {
-        currentType = type;
-        currentTargetName = targetName;
-        document.getElementById('loginId').value = '';
-        document.getElementById('loginPw').value = '';
-        
-        const title = document.getElementById('modalTitle');
-        if(type === 'attendance') title.innerText = "출석 체크";
-        else if(type === 'meal') title.innerText = `[${targetName}] 식사 신청`;
-        else if(type === 'snack') title.innerText = "부식 신청";
-        
-        const modal = document.getElementById('loginModal');
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-    };
+        const getTodayStr = () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
-    window.closeModal = (id) => {
-        const modal = document.getElementById(id);
-        modal.classList.remove('show');
-        setTimeout(() => modal.style.display = 'none', 300);
-    };
+        const showLoading = (show) => {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        };
 
-    window.openRegisterModal = () => {
-        const modal = document.getElementById('registerModal');
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-    };
+        // ----------------------------------
+        // Feature: Tutorial Modal (YouTube)
+        // ----------------------------------
+        window.openTutorialModal = () => {
+            Swal.fire({
+                title: '<strong>급식 튜토리얼</strong>',
+                html: `
+                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius:15px;">
+                        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                        src="https://www.youtube.com/embed/IWwxdhD54uU?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+                `,
+                showCloseButton: true,
+                showConfirmButton: false,
+                width: 600,
+                background: '#fff',
+                padding: '20px'
+            });
+        };
 
-    window.processAllInOne = async () => {
-        const rawId = document.getElementById('loginId').value.replace(/\s/g, ''); 
-        const pw = document.getElementById('loginPw').value;
-        const selectedAct = document.querySelector('input[name="activity"]:checked').value;
-        const idMatch = rawId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+        // ----------------------------------
+        // Feature: Register Modal
+        // ----------------------------------
+        window.openRegisterModal = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: '회원가입',
+                html:
+                    '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)">' +
+                    '<input id="swal-birth" class="swal2-input" type="tel" maxlength="6" placeholder="생년월일 (예: 080101)">' +
+                    '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정">' +
+                    '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '가입하기',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-name').value,
+                        document.getElementById('swal-birth').value,
+                        document.getElementById('swal-pw').value,
+                        document.getElementById('swal-pw2').value
+                    ]
+                }
+            });
 
-        if(!idMatch) return alert("아이디 형식을 확인하세요.");
-        const name = idMatch[1];
-        const birth = idMatch[2];
+            if (formValues) {
+                const [name, birth, pw, pw2] = formValues;
+                if(!name || birth.length !== 6 || !pw) return Swal.fire('오류', '모든 정보를 입력해주세요.', 'error');
+                if(pw !== pw2) return Swal.fire('오류', '비밀번호가 일치하지 않습니다.', 'error');
 
-        try {
-            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
-            const snapshot = await getDocs(q);
-            if(snapshot.empty) return alert("정보가 틀립니다.");
-
-            const userDoc = snapshot.docs[0];
-            const userId = userDoc.id;
-            const userData = userDoc.data();
-            const today = getTodayStr();
-
-            let collectionName = "";
-            let dataPayload = { student_id: userId, student_name: userData.name, activity: selectedAct, date: today, timestamp: Timestamp.now() };
-            let msg = "";
-
-            if(currentType === 'attendance') {
-                collectionName = "attendance";
-                msg = `${userData.name}님, [${selectedAct}] 출석 완료!`;
-            } else if(currentType === 'meal') {
-                const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
-                const checkSnap = await getDocs(checkQ);
-                
-                let isBlocked = false;
-                checkSnap.forEach(doc => {
-                    const d = doc.data();
-                    if (d.status === 'applied' || d.status === 'approved') isBlocked = true;
-                });
-
-                if(isBlocked) return alert("현재 진행 중인 식사 신청이 있습니다.");
-
-                collectionName = "meal_applications";
-                dataPayload.store_name = currentTargetName;
-                dataPayload.status = "applied"; 
-                msg = `${userData.name}님, [${currentTargetName}] 신청 완료!\n식당에 가서 QR코드를 찍어주세요.`;
-
-            } else if(currentType === 'snack') {
-                collectionName = "snacks";
-                dataPayload.item = "간식 세트";
-                msg = "부식 신청 완료!";
+                showLoading(true);
+                try {
+                    const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
+                    const snap = await getDocs(q);
+                    if(!snap.empty) {
+                         showLoading(false);
+                         return Swal.fire('오류', '이미 가입된 회원입니다.', 'warning');
+                    }
+                    
+                    await addDoc(collection(db, "users"), { 
+                        name, birth, password: pw, role: 'student', createdAt: Timestamp.now() 
+                    });
+                    
+                    showLoading(false);
+                    Swal.fire('성공', '회원가입이 완료되었습니다!', 'success');
+                } catch(e) {
+                    console.error(e);
+                    showLoading(false);
+                    Swal.fire('오류', '시스템 오류가 발생했습니다.', 'error');
+                }
             }
+        };
 
-            await addDoc(collection(db, collectionName), dataPayload);
-            alert(msg);
-            closeModal('loginModal');
+        // ----------------------------------
+        // Feature: Combined Application Modal
+        // ----------------------------------
+        window.openCombinedModal = async (type, targetName = "") => {
+            let titleText = "";
+            if(type === 'attendance') titleText = "출석 체크";
+            else if(type === 'meal') titleText = `[${targetName}] 식사 신청`;
+            else if(type === 'snack') titleText = "부식 신청";
 
-        } catch(e) { console.error(e); alert("오류 발생"); }
-    };
+            // HTML for custom radio selection
+            const activityHtml = `
+                <div style="text-align:center; font-size:13px; margin-bottom:8px; color:#666; font-weight:bold;">✨ 오늘의 활동을 선택해주세요</div>
+                <div class="swal-radio-group">
+                    <div class="swal-radio-item">
+                        <input type="radio" id="act1" name="activity" value="기초소양교육" checked>
+                        <label for="act1"><span>📚</span>기초소양</label>
+                    </div>
+                    <div class="swal-radio-item">
+                        <input type="radio" id="act2" name="activity" value="프로그램">
+                        <label for="act2"><span>🎨</span>프로그램</label>
+                    </div>
+                    <div class="swal-radio-item">
+                        <input type="radio" id="act3" name="activity" value="스터디카페">
+                        <label for="act3"><span>✏️</span>스터디</label>
+                    </div>
+                </div>
+            `;
 
-    window.registerUser = async () => {
-        const name = document.getElementById('regName').value;
-        const birth = document.getElementById('regBirth').value;
-        const pw = document.getElementById('regPw').value;
-        const pwConfirm = document.getElementById('regPwConfirm').value;
-        if(!name || birth.length !== 6 || !pw) return alert("정보 확인");
-        if(pw !== pwConfirm) return alert("비번 불일치");
-        try {
-            const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
-            const snap = await getDocs(q);
-            if(!snap.empty) return alert("이미 가입됨");
-            await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
-            alert("가입 완료"); closeModal('registerModal');
-        } catch(e) { alert("오류"); }
-    };
-</script>
+            const { value: result } = await Swal.fire({
+                title: titleText,
+                html: activityHtml +
+                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)">' +
+                      '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
+                showCancelButton: true,
+                confirmButtonText: '신청 완료',
+                didOpen: () => {
+                    // Make custom radio buttons work properly
+                    const radios = document.querySelectorAll('input[name="activity"]');
+                    radios.forEach(r => {
+                        r.addEventListener('change', (e) => {
+                           // Visual toggle logic is handled by CSS, but we ensure it's checked
+                        });
+                    });
+                },
+                preConfirm: () => {
+                    const actInput = document.querySelector('input[name="activity"]:checked');
+                    return {
+                        activity: actInput ? actInput.value : "기초소양교육",
+                        id: document.getElementById('loginId').value,
+                        pw: document.getElementById('loginPw').value
+                    }
+                }
+            });
+
+            if (result) {
+                processApplication(type, targetName, result.activity, result.id, result.pw);
+            }
+        };
+
+        const processApplication = async (type, targetName, activity, rawId, pw) => {
+            const cleanId = rawId.replace(/\s/g, '');
+            const idMatch = cleanId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+            
+            if(!idMatch) return Swal.fire('오류', '아이디는 이름+생년월일6자리 입니다.<br>(예: 홍길동080101)', 'warning');
+            
+            const name = idMatch[1];
+            const birth = idMatch[2];
+
+            showLoading(true);
+
+            try {
+                // 1. Authenticate
+                const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
+                const snapshot = await getDocs(q);
+                
+                if(snapshot.empty) {
+                    showLoading(false);
+                    return Swal.fire('인증 실패', '회원정보가 일치하지 않습니다.', 'error');
+                }
+
+                const userDoc = snapshot.docs[0];
+                const userId = userDoc.id;
+                const userData = userDoc.data();
+                const today = getTodayStr();
+
+                let collectionName = "";
+                let dataPayload = { 
+                    student_id: userId, 
+                    student_name: userData.name, 
+                    activity: activity, 
+                    date: today, 
+                    timestamp: Timestamp.now() 
+                };
+                let successTitle = "";
+                let successMsg = "";
+
+                // 2. Process based on Type
+                if(type === 'attendance') {
+                    // Check duplicate? (Optional, skipping for now to allow multiple check-ins if needed, or simple check)
+                    collectionName = "attendance";
+                    successTitle = "출석 완료";
+                    successMsg = `${userData.name}님, [${activity}] 출석되셨습니다!`;
+                } 
+                else if(type === 'meal') {
+                    // Check Duplicate Meal
+                    const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
+                    const checkSnap = await getDocs(checkQ);
+                    let isBlocked = false;
+                    
+                    checkSnap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.status === 'applied' || d.status === 'approved') isBlocked = true;
+                    });
+
+                    if(isBlocked) {
+                        showLoading(false);
+                        return Swal.fire('신청 불가', '이미 진행 중인 식사 신청이 있습니다.', 'warning');
+                    }
+
+                    collectionName = "meal_applications";
+                    dataPayload.store_name = targetName;
+                    dataPayload.status = "applied"; 
+                    successTitle = "신청 완료";
+                    successMsg = `${userData.name}님, [${targetName}] 신청되었습니다.<br>식당에서 QR코드를 찍어주세요.`;
+                } 
+                else if(type === 'snack') {
+                    collectionName = "snacks";
+                    dataPayload.item = "간식 세트";
+                    successTitle = "부식 신청 완료";
+                    successMsg = "맛있게 드세요!";
+                }
+
+                await addDoc(collection(db, collectionName), dataPayload);
+                showLoading(false);
+                Swal.fire(successTitle, successMsg, 'success');
+
+            } catch(e) {
+                console.error(e);
+                showLoading(false);
+                Swal.fire('시스템 오류', '처리 중 오류가 발생했습니다.', 'error');
+            }
+        };
+
+    </script>
 </body>
 </html>

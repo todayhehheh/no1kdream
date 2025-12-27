@@ -1,190 +1,286 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>매출 및 정산 확인</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #F5F7FA; 
-            margin: 0; padding: 20px; 
+        /* Fintech App Style Override */
+        body {
+            background: #F0F4F8;
             color: #333;
-            max-width: 600px; margin: 0 auto;
-        }
-
-        /* 상단 헤더 */
-        .header { margin-bottom: 25px; padding-left: 5px; }
-        .header h1 { margin: 0; font-size: 26px; color: #2C3E50; }
-        .header p { margin: 5px 0 0 0; color: #7F8C8D; font-size: 15px; }
-
-        /* 금액 카드 */
-        .total-card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
-            margin-bottom: 25px;
-            position: relative;
-            overflow: hidden;
-        }
-        /* 파란색 데코레이션 바 */
-        .total-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
-            background: linear-gradient(90deg, #2196F3, #21CBF3);
-        }
-        
-        .total-label { font-size: 15px; color: #7F8C8D; font-weight: 500; margin-bottom: 8px; }
-        .total-amount { font-size: 42px; font-weight: 800; color: #2C3E50; letter-spacing: -1px; }
-        .total-amount span { font-size: 20px; font-weight: 600; color: #95A5A6; margin-left: 2px; }
-
-        /* 리스트 영역 */
-        .list-header { 
-            display: flex; justify-content: space-between; align-items: flex-end;
-            margin-bottom: 15px; padding: 0 5px;
-        }
-        .list-header h3 { margin: 0; font-size: 18px; color: #34495E; }
-        .count-badge { background: #E3F2FD; color: #2196F3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-
-        .list-container {
-            display: flex; flex-direction: column; gap: 12px;
-        }
-
-        /* 개별 리스트 아이템 */
-        .log-item {
-            background: white;
             padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .glass-container {
+            background: white;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            max-width: 600px;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* Header */
+        .app-header {
+            padding: 30px 25px 50px 25px;
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+            border-radius: 0 0 25px 25px;
+            margin-bottom: -30px;
+            /* Overlap effect */
+        }
+
+        .app-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 24px;
+            text-align: left;
+            opacity: 0.95;
+        }
+
+        .app-header p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+
+        /* Total Card */
+        .balance-card {
+            background: white;
+            margin: 0 20px;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: #78909c;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 800;
+            color: #263238;
+            letter-spacing: -0.5px;
+        }
+
+        .balance-amount span {
+            font-size: 18px;
+            font-weight: 600;
+            color: #78909c;
+            margin-left: 2px;
+        }
+
+        /* List Section */
+        .list-section {
+            padding: 40px 20px 20px 20px;
+        }
+
+        .list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: transform 0.2s;
-            border: 1px solid #eee;
+            margin-bottom: 15px;
+            padding-left: 5px;
         }
-        .log-item:active { transform: scale(0.98); }
 
-        .log-left { display: flex; flex-direction: column; gap: 4px; }
-        .log-date { font-size: 13px; color: #95A5A6; }
-        .log-name { font-size: 17px; font-weight: 700; color: #2C3E50; }
-        
-        .log-amount { font-size: 18px; font-weight: 700; color: #2196F3; } 
+        .list-header h3 {
+            margin: 0;
+            color: #37474f;
+            font-size: 17px;
+        }
 
-        /* 데이터 없음 상태 */
-        .empty-state { text-align: center; padding: 50px 20px; color: #BDC3C7; }
-        .empty-state span { font-size: 40px; display: block; margin-bottom: 10px; }
+        .count-badge {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .log-item {
+            background: white;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #eceff1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        .log-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .log-date {
+            font-size: 12px;
+            color: #90a4ae;
+        }
+
+        .log-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #37474f;
+        }
+
+        .log-amount {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1e88e5;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #b0bec5;
+        }
+
+        .empty-state span {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="header">
-    <h1 id="storeName">가게 이름 로딩 중...</h1>
-    <p>사장님, 오늘도 정말 고생 많으셨습니다! 👨‍🍳</p>
-</div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
 
-<div class="total-card">
-    <div class="total-label">결제 예정 금액</div>
-    <div class="total-amount" id="totalAmount">0<span>원</span></div>
-</div>
+    <!-- Main Container -->
+    <div class="glass-container">
 
-<div class="list-header">
-    <h3>📋 식사 제공 내역</h3>
-    <span class="count-badge" id="totalCount">0건</span>
-</div>
+        <div class="app-header">
+            <h1 id="storeName">가게 이름</h1>
+            <p>사장님, 오늘도 정말 고생 많으셨습니다! 👨‍🍳</p>
+        </div>
 
-<div class="list-container" id="listBox">
-    <div class="empty-state">내역을 불러오고 있습니다...</div>
-</div>
+        <div class="balance-card">
+            <div class="balance-label">결제 예정 금액</div>
+            <div class="balance-amount" id="totalAmount">0<span>원</span></div>
+        </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        <div class="list-section">
+            <div class="list-header">
+                <h3>📋 식사 결제 내역 (미정산)</h3>
+                <span class="count-badge" id="totalCount">0건</span>
+            </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAalHhoEK-ko55Jep-7k8ULHeaWWU99oh8",
-      authDomain: "dream-meal-support.firebaseapp.com",
-      projectId: "dream-meal-support",
-      storageBucket: "dream-meal-support.firebasestorage.app",
-      messagingSenderId: "230720243044",
-      appId: "1:230720243044:web:eb38ecc28353a1c70aa671"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+            <div id="listBox">
+                <!-- Content -->
+            </div>
+        </div>
+    </div>
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const myStore = urlParams.get('store');
+    <script type="module">
+        import { db, collection, getDocs, query, where } from "./js/firebase-config.js";
 
-    window.onload = async () => {
-        if(!myStore) {
-            document.body.innerHTML = "<h3 style='text-align:center; margin-top:50px;'>QR코드를 다시 스캔해주세요.</h3>";
-            return;
-        }
-        document.getElementById('storeName').innerText = myStore;
+        // Constants
+        const urlParams = new URLSearchParams(window.location.search);
+        const myStore = urlParams.get('store');
 
-        const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("status", "==", "completed"));
-        const snap = await getDocs(q);
+        const showLoading = (show) => { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
 
-        let total = 0;
-        let count = 0;
-        let list = [];
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            // 미정산(is_settled !== true) 건만 표시
-            if(d.is_settled !== true) {
-                list.push(d);
-                total += Number(d.amount);
-                count++;
+        window.onload = async () => {
+            if (!myStore) {
+                Swal.fire('오류', '잘못된 접근입니다. QR코드를 다시 스캔해주세요.', 'error');
+                document.getElementById('storeName').innerText = "가게 정보 없음";
+                return;
             }
-        });
+            document.getElementById('storeName').innerText = myStore;
+            showLoading(true);
 
-        // 날짜 내림차순 정렬
-        list.sort((a,b) => {
-            if(a.date !== b.date) return b.date.localeCompare(a.date);
-            return b.timestamp - a.timestamp;
-        });
+            try {
+                // Fetch completed meals for this store that are NOT settled
+                const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("status", "==", "completed"));
+                const snap = await getDocs(q);
 
-        const listBox = document.getElementById('listBox');
-        listBox.innerHTML = "";
+                let total = 0;
+                let count = 0;
+                let list = [];
 
-        if(list.length === 0) {
-            listBox.innerHTML = `
-                <div class="empty-state">
-                    <span>🎉</span>
-                    모든 금액이 정산되었습니다.<br>
-                    (현재 미정산 내역이 없습니다)
-                </div>`;
-            document.getElementById('totalAmount').innerHTML = "0<span>원</span>";
-            document.getElementById('totalCount').innerText = "0건";
-            return;
-        }
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    // Double check is_settled, though usually handled by server or admin check
+                    // If 'is_settled' field doesn't exist, it's false.
+                    if (d.is_settled !== true) {
+                        list.push(d);
+                        total += Number(d.amount);
+                        count++;
+                    }
+                });
 
-        list.forEach(item => {
-            // 이름 마스킹 (김시언 -> 김*언)
-            const maskedName = item.student_name.length > 2 
-                ? item.student_name[0] + "*" + item.student_name.substring(2)
-                : item.student_name[0] + "*";
-            
-            // 날짜 포맷 (12.21)
-            const shortDate = item.date.substring(5).replace('-', '.');
+                // Sort by date desc
+                list.sort((a, b) => {
+                    if (a.date !== b.date) return b.date.localeCompare(a.date);
+                    return b.timestamp - a.timestamp;
+                });
 
-            // [수정] 이름 뒤에 '학생' 제거
-            listBox.innerHTML += `
-                <div class="log-item">
-                    <div class="log-left">
-                        <span class="log-date">${shortDate}</span>
-                        <span class="log-name">${maskedName}</span>
-                    </div>
-                    <div class="log-amount">${Number(item.amount).toLocaleString()}원</div>
-                </div>
-            `;
-        });
+                const listBox = document.getElementById('listBox');
+                listBox.innerHTML = "";
 
-        document.getElementById('totalAmount').innerHTML = `${total.toLocaleString()}<span>원</span>`;
-        document.getElementById('totalCount').innerText = `${count}건`;
-    };
-</script>
+                if (list.length === 0) {
+                    listBox.innerHTML = `
+                        <div class="empty-state">
+                            <span>🎉</span>
+                            모두 정산되었습니다.<br>
+                            (현재 미정산 내역이 없습니다)
+                        </div>`;
+                } else {
+                    list.forEach(item => {
+                        // Mask Name
+                        const maskedName = item.student_name.length > 2
+                            ? item.student_name[0] + "*" + item.student_name.substring(2)
+                            : item.student_name[0] + "*";
+
+                        const shortDate = item.date.substring(5).replace('-', '.');
+
+                        listBox.innerHTML += `
+                            <div class="log-item">
+                                <div class="log-left">
+                                    <span class="log-date">${shortDate}</span>
+                                    <span class="log-name">${maskedName}</span>
+                                </div>
+                                <div class="log-amount">${Number(item.amount).toLocaleString()}원</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                document.getElementById('totalAmount').innerHTML = `${total.toLocaleString()}<span>원</span>`;
+                document.getElementById('totalCount').innerText = `${count}건`;
+                showLoading(false);
+
+            } catch (e) {
+                console.error(e);
+                showLoading(false);
+                Swal.fire('오류', '데이터를 불러오지 못했습니다.', 'error');
+            }
+        };
+    </script>
+
 </body>
+
 </html>
