@@ -259,39 +259,26 @@
         }
 
         /* Print/PDF Zone */
-        #hidden-print-zone {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            width: 210mm;
-            background: white;
-            padding: 20mm;
-        }
+   #hidden-print-zone { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 210mm; 
+    min-height: 297mm; /* 최소 A4 높이 확보 (데이터 없어도 찍히게) */
+    background: white; 
+    z-index: -9999; /* 화면 맨 뒤로 숨김 */
+    padding: 20mm; 
+    box-sizing: border-box;
+}
 
-        .report-header {
-            text-align: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .report-title {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .report-table th,
-        .report-table td {
-            border: 1px solid #999;
-            padding: 8px;
-            text-align: center;
-        }
+/* 보고서 스타일은 그대로 유지 */
+.report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+.report-title { font-size: 24px; font-weight: bold; margin: 0 0 10px 0; color: #000; }
+.report-info { font-size: 14px; color: #333; }
+.report-summary { border: 2px solid #333; background: #f8f9fa; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-weight: bold; color: #000; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table th, .report-table td { border: 1px solid #999; padding: 8px; text-align: center; color: #000; }
+.report-table th { background: #eee; }
     </style>
 </head>
 
@@ -770,21 +757,52 @@
             downloadPDFFromElement(zone, `활동기록부_${start}`);
         };
 
-        function downloadPDFFromElement(element, fileName) {
-            showLoading(true);
-            html2canvas(element, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                const imgWidth = 210;
-                const imgHeight = canvas.height * imgWidth / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-                pdf.save(fileName + ".pdf");
-                element.innerHTML = "";
-                showLoading(false);
-            });
-        }
+   // [수정] PDF 다운로드 함수 (안정성 강화)
+function downloadPDFFromElement(element, fileName) {
+    // 1. 캡처 전, 해당 영역이 렌더링될 시간을 아주 살짝 줍니다.
+    setTimeout(() => {
+        html2canvas(element, { 
+            scale: 2, // 고화질
+            useCORS: true, // 이미지 로딩 허용
+            logging: false,
+            allowTaint: true
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210; // A4 너비 (mm)
+            const pageHeight = 297; // A4 높이 (mm)
+            
+            // 이미지 높이 계산 (내용이 없어도 최소 높이 보장)
+            const imgHeight = (canvas.height * imgWidth / canvas.width) || 20; 
+            
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            // 내용이 길면 다음 페이지 추가
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save(fileName + ".pdf");
+            
+            // [중요] 사용 후 내용 비우기
+            element.innerHTML = ""; 
+        }).catch(err => {
+            console.error("PDF 생성 실패:", err);
+            alert("PDF 생성 중 오류가 발생했습니다.\n다시 시도해 주세요.");
+            element.innerHTML = ""; // 실패해도 초기화
+        });
+    }, 100); // 0.1초 대기 후 캡처
+}
 
     </script>
 </body>
+
 
 </html>
