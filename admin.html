@@ -214,21 +214,23 @@
         </div>
 
         <div id="tab-education" class="table-box" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <div style="font-weight:bold; color:#555; font-size:16px;">🎓 기초소양교육 수강 현황</div>
+            <div class="filter-bar">
+                <label>검색:</label>
+                <input type="text" id="eduSearchName" placeholder="이름 입력 (예: 홍길동)">
+                <button class="btn-small btn-blue" onclick="loadEducationStats()">조회</button>
                 <button class="btn-small btn-green" onclick="downloadTableAsExcel('eduTable', '기초소양교육_이수대장')">엑셀 다운로드</button>
             </div>
+            <div style="font-size:13px; color:#666; margin-bottom:10px;">ℹ️ 이름을 입력하지 않고 조회하면 전체 목록이 나옵니다.</div>
             <table id="eduTable">
                 <thead>
                     <tr>
                         <th>수강일자</th>
-                        <th>이름 (생년월일)</th>
-                        <th>수강과목</th>
+                        <th>이름</th> <th>생년월일</th> <th>수강과목</th>
                         <th>강의명</th>
                     </tr>
                 </thead>
                 <tbody id="eduBody">
-                    <tr><td colspan="4">데이터를 불러오는 중...</td></tr>
+                    <tr><td colspan="5">데이터를 불러오는 중...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -290,7 +292,6 @@
             loadAllUsersAndApps();
         };
 
-        // [수정] 새로고침 함수: 5번 탭도 갱신되도록 수정
         window.refreshData = () => {
             if (document.getElementById('tab-users').style.display !== 'none') {
                 loadAllUsersAndApps();
@@ -530,29 +531,42 @@
             showLoading(false);
         };
 
-        // --- TAB 5: Education Stats Logic ---
+        // --- TAB 5: Education Stats Logic (수정됨: 이름/생년월일 분리 & 검색) ---
         window.loadEducationStats = async () => {
             showLoading(true);
             const tbody = document.getElementById('eduBody');
-            tbody.innerHTML = "<tr><td colspan='4'>로딩 중...</td></tr>";
+            const searchName = document.getElementById('eduSearchName').value.trim();
+            
+            tbody.innerHTML = "<tr><td colspan='5'>로딩 중...</td></tr>";
 
             try {
+                // education_records 컬렉션에서 시간순(최신순)으로 가져오기
                 const q = query(collection(db, "education_records"), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
 
                 tbody.innerHTML = "";
-                if (querySnapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='4'>수강 내역이 없습니다.</td></tr>";
+                
+                // 데이터 배열로 변환
+                let records = [];
+                querySnapshot.forEach(doc => records.push(doc.data()));
+
+                // 검색어가 있으면 이름으로 필터링 (JS 필터)
+                if (searchName) {
+                    records = records.filter(r => r.student_name.includes(searchName));
+                }
+
+                if (records.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='5'>수강 내역이 없습니다.</td></tr>";
                     showLoading(false);
                     return;
                 }
 
-                querySnapshot.forEach((doc) => {
-                    const d = doc.data();
+                records.forEach((d) => {
                     tbody.innerHTML += `
                         <tr>
                             <td>${d.date}</td>
-                            <td>${d.student_name} <span style="font-size:12px; color:#888;">(${d.student_birth})</span></td>
+                            <td>${d.student_name}</td>
+                            <td>${d.student_birth}</td>
                             <td><span class="badge" style="background:#e3f2fd; color:#2196f3; padding: 2px 6px; border-radius: 4px; font-weight:bold;">${d.category}</span></td>
                             <td style="text-align:left; padding-left:20px;">${d.video_title}</td>
                         </tr>
@@ -560,7 +574,7 @@
                 });
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='4'>데이터 로딩 실패</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='5'>데이터 로딩 실패</td></tr>";
             }
             showLoading(false);
         };
