@@ -16,21 +16,21 @@
         /* 기존 스타일 유지 */
         .glass-container { max-width: 1200px; padding: 25px; }
         
-        /* [수정] 상단 헤더 레이아웃 (버튼 배치용) */
         h1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .header-left { display: flex; align-items: center; gap: 15px; }
         
-        /* [수정] 새로고침 버튼 스타일 */
         .refresh-btn { background: rgba(255, 255, 255, 0.8); border: 1px solid #ccc; padding: 8px 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 16px; }
         .refresh-btn:hover { background: white; transform: rotate(180deg); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .refresh-btn:active { transform: scale(0.95); }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: rgba(255, 255, 255, 0.4); padding: 5px; border-radius: 20px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 15px; cursor: pointer; font-weight: 700; color: #636e72; font-size: 15px; transition: 0.3s; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: rgba(255, 255, 255, 0.4); padding: 5px; border-radius: 20px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 15px; cursor: pointer; font-weight: 700; color: #636e72; font-size: 15px; transition: 0.3s; white-space: nowrap; }
         .tab-btn.active { background: white; color: #6C5CE7; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); }
         .tab-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.5); }
+        
         .table-box { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03); animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 14px; }
         th { background-color: #f8f9fa; color: #2d3436; font-weight: 700; padding: 12px; border-bottom: 2px solid #edeff2; text-align: center; }
         td { padding: 12px; border-bottom: 1px solid #f1f2f6; vertical-align: middle; color: #2d3436; text-align: center; }
@@ -43,7 +43,6 @@
         .btn-red:hover { background: #e53935; color: white; }
         .btn-green { background: #e8f5e9; color: #43a047; }
         
-        /* [추가] 기기 등록 버튼 스타일 */
         .btn-dark { background: #555; color: white; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; border:none; cursor: pointer; }
         .btn-dark:hover { background: #333; }
 
@@ -53,38 +52,27 @@
         .toggle-btn.active-dalin { background: #fff8e1; color: #ff6f00; border-color: #ffca28; }
         .toggle-btn.active-mystery { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
         .toggle-btn.active-yeon { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+        
         .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; background: #fafafa; padding: 15px; border-radius: 15px; }
         .filter-bar label { font-size: 13px; font-weight: bold; color: #636e72; }
         .filter-bar select, .filter-bar input { border: 1px solid #ddd; padding: 8px; border-radius: 8px; outline: none; }
+        
         .summary-box { background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-around; font-weight: 700; color: #1565c0; }
+        
         .ad-setting-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .ad-card { background: #fafafa; padding: 20px; border-radius: 15px; border: 1px solid #eee; }
 
         #hidden-print-zone {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 210mm; 
-            min-height: 297mm;
-            background: white; 
-            z-index: -9999;
-            padding: 20mm;
-            box-sizing: border-box;
+            position: fixed; top: 0; left: 0; width: 210mm; min-height: 297mm;
+            background: white; z-index: -9999; padding: 20mm; box-sizing: border-box;
             font-family: 'Pretendard', sans-serif;
         }
 
         .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
         .report-title { font-size: 28px; font-weight: bold; margin: 0 0 10px 0; color: #000; }
         .report-summary-box {
-            border: 2px solid #333;
-            background-color: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-around;
-            font-weight: bold;
-            color: #000;
-            font-size: 14px;
+            border: 2px solid #333; background-color: #f8f9fa; padding: 15px; margin-bottom: 20px;
+            display: flex; justify-content: space-around; font-weight: bold; color: #000; font-size: 14px;
         }
         .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .report-table th, .report-table td { border: 1px solid #999; padding: 10px; text-align: center; color: #000; }
@@ -113,6 +101,7 @@
             <button class="tab-btn" onclick="switchTab('settlement')">2. 정산 관리</button>
             <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록</button>
             <button class="tab-btn" onclick="switchTab('ads')">4. 광고 설정</button>
+            <button class="tab-btn" onclick="switchTab('education')">5. 기초소양교육</button>
         </div>
 
         <div id="tab-users" class="table-box">
@@ -223,6 +212,27 @@
             </div>
             <button class="btn btn-primary" style="width:100%; margin-top:20px; padding:15px;" onclick="saveAds()">설정 저장 및 반영</button>
         </div>
+
+        <div id="tab-education" class="table-box" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <div style="font-weight:bold; color:#555; font-size:16px;">🎓 기초소양교육 수강 현황</div>
+                <button class="btn-small btn-green" onclick="downloadTableAsExcel('eduTable', '기초소양교육_이수대장')">엑셀 다운로드</button>
+            </div>
+            <table id="eduTable">
+                <thead>
+                    <tr>
+                        <th>수강일자</th>
+                        <th>이름 (생년월일)</th>
+                        <th>수강과목</th>
+                        <th>강의명</th>
+                    </tr>
+                </thead>
+                <tbody id="eduBody">
+                    <tr><td colspan="4">데이터를 불러오는 중...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
     <div id="hidden-print-zone"></div>
@@ -238,16 +248,15 @@
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         };
 
-        // [신규] 기기 등록 함수
+        // 기기 등록 함수
         window.registerThisDevice = () => {
-            // 관리자 확인 (이미 로그인된 상태지만 한 번 더 확인)
             if(confirm("이 컴퓨터를 '키오스크 인증 기기'로 등록하시겠습니까?\n등록 후에는 메인 페이지(index.html) 접속이 허용됩니다.")) {
                 localStorage.setItem('kiosk_auth_token', 'dream_center_pc');
                 Swal.fire("등록 완료", "이제 이 기기에서 키오스크 화면 접속이 가능합니다.", "success");
             }
         };
 
-        // [신규] 기기 등록 해제 함수
+        // 기기 등록 해제 함수
         window.unregisterThisDevice = () => {
             if(confirm("이 기기의 키오스크 인증을 해제하시겠습니까?\n해제하면 다시 index.html에 접속해도 차단됩니다.")) {
                 localStorage.removeItem('kiosk_auth_token');
@@ -281,6 +290,7 @@
             loadAllUsersAndApps();
         };
 
+        // [수정] 새로고침 함수: 5번 탭도 갱신되도록 수정
         window.refreshData = () => {
             if (document.getElementById('tab-users').style.display !== 'none') {
                 loadAllUsersAndApps();
@@ -290,6 +300,8 @@
                 loadRecords();
             } else if (document.getElementById('tab-ads').style.display !== 'none') {
                 loadAds();
+            } else if (document.getElementById('tab-education').style.display !== 'none') {
+                loadEducationStats();
             }
             const Toast = Swal.mixin({
                 toast: true, position: 'top-end', showConfirmButton: false, timer: 1000,
@@ -309,9 +321,11 @@
             if (tabName == 'settlement') btns[1].classList.add('active');
             if (tabName == 'records') btns[2].classList.add('active');
             if (tabName == 'ads') btns[3].classList.add('active');
+            if (tabName == 'education') btns[4].classList.add('active');
 
             if (tabName === 'users') loadAllUsersAndApps();
             if (tabName === 'ads') loadAds();
+            if (tabName === 'education') loadEducationStats();
         };
 
         // --- TAB 1 Logic ---
@@ -513,6 +527,41 @@
                 if (finalRecords.length === 0) tbody.innerHTML = "<tr><td colspan='3'>기록이 없습니다.</td></tr>";
                 finalRecords.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.activity}</td></tr>`);
             } catch (e) { console.error(e); }
+            showLoading(false);
+        };
+
+        // --- TAB 5: Education Stats Logic ---
+        window.loadEducationStats = async () => {
+            showLoading(true);
+            const tbody = document.getElementById('eduBody');
+            tbody.innerHTML = "<tr><td colspan='4'>로딩 중...</td></tr>";
+
+            try {
+                const q = query(collection(db, "education_records"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                tbody.innerHTML = "";
+                if (querySnapshot.empty) {
+                    tbody.innerHTML = "<tr><td colspan='4'>수강 내역이 없습니다.</td></tr>";
+                    showLoading(false);
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.date}</td>
+                            <td>${d.student_name} <span style="font-size:12px; color:#888;">(${d.student_birth})</span></td>
+                            <td><span class="badge" style="background:#e3f2fd; color:#2196f3; padding: 2px 6px; border-radius: 4px; font-weight:bold;">${d.category}</span></td>
+                            <td style="text-align:left; padding-left:20px;">${d.video_title}</td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='4'>데이터 로딩 실패</td></tr>";
+            }
             showLoading(false);
         };
 
