@@ -46,11 +46,10 @@
         }
 
         .card-body { padding: 15px; }
-        .badge-cat { 
-            background: #e3f2fd; color: #2196f3; padding: 3px 8px; 
-            border-radius: 5px; font-size: 11px; font-weight: bold; display: inline-block; margin-bottom: 5px;
-        }
-        .video-title { font-size: 15px; font-weight: bold; color: #333; margin: 0; line-height: 1.4; }
+        
+        /* [수정] 과목명 배지는 삭제함 (사용자에게 안 보이게) */
+        
+        .video-title { font-size: 15px; font-weight: bold; color: #333; margin: 0; line-height: 1.4; word-break: keep-all; }
 
         /* Pagination */
         .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
@@ -69,15 +68,12 @@
         .modal-video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         
         .quiz-section { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left; }
-        .quiz-q { font-weight: bold; margin-bottom: 10px; color: #2d3436; }
-        .quiz-options label { display: block; margin-bottom: 5px; cursor: pointer; }
+        .quiz-q { font-weight: bold; margin-bottom: 10px; color: #2d3436; font-size: 15px; }
+        .quiz-options label { display: block; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
         
         .auth-section { border-top: 1px solid #eee; padding-top: 20px; }
         .auth-section input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         
-        .btn-submit { width: 100%; background: #6C5CE7; color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-submit:hover { background: #5a4ad1; }
-
         .back-home { position: absolute; top: 20px; left: 20px; text-decoration: none; font-weight: bold; color: #666; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
@@ -110,19 +106,227 @@
         import { db, collection, addDoc, query, where, getDocs, Timestamp } from "./js/firebase-config.js";
 
         // ==========================================
-        // 1. 강의 데이터 (나중에 이 부분만 수정하면 됨)
+        // 1. 강의 데이터 (1번 ~ 10번)
         // ==========================================
         const videoData = [
-            { id: 1, cat: "권리교육", title: "청소년 노동인권, 이것만은 알자!", url: "https://www.youtube.com/embed/example1", question: "청소년도 근로계약서를 써야 할까요?", options: ["써야 한다", "안 써도 된다"], answer: 0 },
-            { id: 2, cat: "디지털", title: "스마트폰 과의존 예방 교육", url: "https://www.youtube.com/embed/example2", question: "스마트폰을 잠시 내려놓는 시간은?", options: ["디지털 디톡스", "디지털 중독"], answer: 0 },
-            { id: 3, cat: "성교육", title: "올바른 성지식과 에티켓", url: "https://www.youtube.com/embed/example3", question: "상대방의 동의 없는 접촉은?", options: ["사랑이다", "폭력이다"], answer: 1 },
-            { id: 4, cat: "안전", title: "지진 발생 시 대피요령", url: "https://www.youtube.com/embed/example4", question: "지진이 나면 어디로 숨을까요?", options: ["책상 아래", "창문 옆"], answer: 0 },
-            { id: 5, cat: "환경", title: "분리수거의 달인 되기", url: "https://www.youtube.com/embed/example5", question: "플라스틱은 씻어서 버려야 할까요?", options: ["그냥 버린다", "씻어서 버린다"], answer: 1 },
-            { id: 6, cat: "진로", title: "미래 직업 탐색 가이드", url: "https://www.youtube.com/embed/example6", question: "좋아하는 일을 찾는 과정은?", options: ["진로 탐색", "시간 낭비"], answer: 0 },
-            { id: 7, cat: "경제", title: "청소년 금융 상식 기초", url: "https://www.youtube.com/embed/example7", question: "돈을 계획적으로 쓰는 것은?", options: ["용돈 기입장", "충동 구매"], answer: 0 },
-            { id: 8, cat: "폭력예방", title: "학교폭력, 방관자가 되지 말자", url: "https://www.youtube.com/embed/example8", question: "학교폭력을 목격하면?", options: ["신고한다", "모른척한다"], answer: 0 },
-            { id: 9, cat: "건강", title: "올바른 식습관과 영양", url: "https://www.youtube.com/embed/example9", question: "아침 식사는?", options: ["먹는 게 좋다", "굶는 게 좋다"], answer: 0 },
-            { id: 10, cat: "역사", title: "우리나라 독립운동의 역사", url: "https://www.youtube.com/embed/example10", question: "3.1 운동이 일어난 해는?", options: ["1919년", "1945년"], answer: 0 },
+{ 
+                id: 1, 
+                cat: "근로권익교육", 
+                title: "알바생이 꼭 알아야 할 노동법", 
+                url: "https://www.youtube.com/embed/1o4bLdtNngI", 
+                question: "아르바이트를 시작하기 전, 사장님과 반드시 작성해야 하는 문서는?", 
+                options: ["① 자기소개서", "② 근로계약서", "③ 반성문", "④ 보안각서"], 
+                answer: 1 
+            },
+            { 
+                id: 2, 
+                cat: "아동학대 예방∙인권교육", 
+                title: "우리의 관심이 필요합니다", 
+                url: "https://www.youtube.com/embed/Iu5pr1mCDw8", 
+                question: "아동학대가 의심되는 상황을 목격했을 때 올바른 행동은?", 
+                options: ["① 남의 가정사이니 신경 끈다", "② 112 또는 아동보호전문기관에 신고한다", "③ 확실하지 않으니 그냥 넘어간다", "④ 부모님에게 직접 따진다"], 
+                answer: 1 
+            },
+            { 
+                id: 3, 
+                cat: "성폭력예방교육", 
+                title: "동의와 존중", 
+                url: "https://www.youtube.com/embed/cahTXbGx98A", 
+                question: "상대방과의 스킨십에서 가장 중요한 원칙은?", 
+                options: ["① 상대방의 명확한 동의", "② 나의 기분", "③ 분위기", "④ 친구들의 조언"], 
+                answer: 0 
+            },
+            { 
+                id: 4, 
+                cat: "디지털 성범죄 예방교육", 
+                title: "불법 촬영물 대처법", 
+                url: "https://www.youtube.com/embed/VrladAEapok", 
+                question: "불법 촬영물을 발견하거나 전송받았을 때 올바른 대처는?", 
+                options: ["① 친구들에게 공유한다", "② 호기심에 저장해 둔다", "③ 즉시 삭제하고 유포하지 않으며 신고한다", "④ 나만 조용히 본다"], 
+                answer: 2 
+            },
+            { 
+                id: 5, 
+                cat: "성교육", 
+                title: "올바른 성지식", 
+                url: "https://www.youtube.com/embed/43CRq23H5RE", 
+                question: "피임에 대한 설명으로 올바른 것은?", 
+                options: ["① 피임은 여성만 하는 것이다", "② 생리 기간에는 임신이 되지 않는다", "③ 올바른 피임법을 사용하여 원치 않는 임신을 예방해야 한다", "④ 한 번의 실수로는 임신되지 않는다"], 
+                answer: 2 
+            },
+            { 
+                id: 6, 
+                cat: "자살예방교육", 
+                title: "소중한 생명 지키기", 
+                url: "https://www.youtube.com/embed/jvDE1XFlAIo", 
+                question: "친구가 '죽고 싶다'고 말했을 때 가장 바람직한 반응은?", 
+                options: ["① 농담으로 받아넘긴다", "② 비밀로 해줄 테니 걱정 말라고 한다", "③ 전문가나 선생님께 알리고 도움을 요청한다", "④ 나약한 소리 하지 말라고 충고한다"], 
+                answer: 2 
+            },
+            { 
+                id: 7, 
+                cat: "마약∙도박 예방교육", 
+                title: "중독의 위험성", 
+                url: "https://www.youtube.com/embed/HTeVGChq19w", 
+                question: "친구가 '돈을 쉽게 벌 수 있는 게임(도박)'을 권유할 때 올바른 행동은?", 
+                options: ["① 소액이니 재미 삼아 한 번만 해본다", "② 친구와의 의리를 위해 돈을 빌려준다", "③ 불법 도박일 수 있으므로 단호하게 거절한다", "④ 돈을 벌 기회라고 생각하고 참여한다"], 
+                answer: 2 
+            },
+            { 
+                id: 8, 
+                cat: "금융교육", 
+                title: "신용과 자산관리", 
+                url: "https://www.youtube.com/embed/SvfP1LlVfys", 
+                question: "신용 등급을 관리하기 위해 피해야 할 행동은?", 
+                options: ["① 용돈 기입장을 쓴다", "② 체크카드를 주로 사용한다", "③ 빌린 돈이나 통신요금을 연체한다", "④ 계획적인 소비를 한다"], 
+                answer: 2 
+            },
+            { 
+                id: 9, 
+                cat: "선거권 교육", 
+                title: "나의 한 표의 가치", 
+                url: "https://www.youtube.com/embed/-v6lWwcBKgA", 
+                question: "민주주의 사회에서 국민이 정치에 참여하는 가장 기본적인 방법은?", 
+                options: ["① 세금 납부 거부", "② 투표(선거) 참여", "③ 뉴스 보지 않기", "④ 타인의 의견 무시하기"], 
+                answer: 1 
+            },
+            { 
+                id: 10, 
+                cat: "지적재산권 교육", 
+                title: "저작권 바로 알기", 
+                url: "https://www.youtube.com/embed/bRxLHA1A9lk", 
+                question: "인터넷에 있는 이미지를 사용할 때 올바른 방법은?", 
+                options: ["① 출처를 밝히지 않고 내 것처럼 쓴다", "② 저작권자의 허락을 받거나 저작권 프리 이미지를 사용한다", "③ 약간만 변형해서 사용한다", "④ 상업적으로만 안 쓰면 마음대로 써도 된다"], 
+                answer: 1 
+            },
+
+            // [11~24번 추가]
+            { 
+                id: 11, 
+                cat: "근로권익교육", 
+                title: "노동인권 기초 1 - 주휴수당", 
+                url: "https://www.youtube.com/embed/8cLYzaEWnNM", 
+                question: "일주일에 15시간 이상 일하고 개근했을 때 받을 수 있는 수당은?", 
+                options: ["① 야간수당", "② 주휴수당", "③ 연장수당", "④ 직책수당"], 
+                answer: 1 
+            },
+            { 
+                id: 12, 
+                cat: "근로권익교육", 
+                title: "노동인권 기초 2 - 최저임금", 
+                url: "https://www.youtube.com/embed/zBfJkQ5PTSo", 
+                question: "근로자에게 줘야 하는 임금의 최저 수준을 법으로 정한 제도는?", 
+                options: ["① 최고임금제", "② 평균임금제", "③ 최저임금제", "④ 성과급제"], 
+                answer: 2 
+            },
+            { 
+                id: 13, 
+                cat: "근로권익교육", 
+                title: "노동인권 기초 3 - 부당대우 대처", 
+                url: "https://www.youtube.com/embed/TvRUfFX2Ln8", 
+                question: "일하다가 다쳤을 때 치료비와 보상을 받을 수 있는 제도는?", 
+                options: ["① 산재보험(산업재해 보상)", "② 국민연금", "③ 고용보험", "④ 실비보험"], 
+                answer: 0 
+            },
+            { 
+                id: 14, 
+                cat: "근로권익교육", 
+                title: "노동인권 기초 4 - 근로계약 해지", 
+                url: "https://www.youtube.com/embed/jLIGuYwzMJo", 
+                question: "아르바이트를 그만두고 싶을 때 바람직한 태도는?", 
+                options: ["① 아무 말 없이 출근하지 않는다(잠수)", "② 문자로 통보하고 바로 차단한다", "③ 최소 2주~1달 전에 사장님께 미리 말한다", "④ 친구를 대신 보내고 그만둔다"], 
+                answer: 2 
+            },
+            { 
+                id: 15, 
+                cat: "아동학대 예방∙인권교육", 
+                title: "권리와 책임", 
+                url: "https://www.youtube.com/embed/FggvJionlFU", 
+                question: "모든 사람이 태어날 때부터 가지는, 침해받지 않을 권리는?", 
+                options: ["① 소유권", "② 인권", "③ 참정권", "④ 경영권"], 
+                answer: 1 
+            },
+            { 
+                id: 16, 
+                cat: "성폭력예방교육", 
+                title: "디지털 성폭력의 이해", 
+                url: "https://www.youtube.com/embed/RCgTg8JInbI", 
+                question: "온라인에서 낯선 사람이 개인정보나 사진을 요구할 때 대처법은?", 
+                options: ["① 친절하게 모두 알려준다", "② 원하는 사진을 찍어서 보내준다", "③ 요구를 거절하고 차단하거나 신고한다", "④ 친구들에게 자랑한다"], 
+                answer: 2 
+            },
+            { 
+                id: 17, 
+                cat: "디지털 성범죄 예방교육", 
+                title: "사이버 괴롭힘 예방", 
+                url: "https://www.youtube.com/embed/hpd7k8GHrlo", 
+                question: "단체 채팅방에서 특정 친구를 비하하거나 따돌리는 행동은?", 
+                options: ["① 단순한 장난", "② 사이버 폭력(범죄)", "③ 친목 도모", "④ 스트레스 해소"], 
+                answer: 1 
+            },
+            { 
+                id: 18, 
+                cat: "자살예방교육", 
+                title: "생명사랑 지킴이 1", 
+                url: "https://www.youtube.com/embed/enN4JV3nIWg", 
+                question: "우울감이나 심리적 어려움을 겪을 때 도움을 받을 수 있는 전화번호는?", 
+                options: ["① 114", "② 1393 (자살예방상담전화)", "③ 119", "④ 112"], 
+                answer: 1 
+            },
+            { 
+                id: 19, 
+                cat: "자살예방교육", 
+                title: "생명사랑 지킴이 2", 
+                url: "https://www.youtube.com/embed/Vd_XfWaFieM", 
+                question: "힘들어하는 친구에게 건네기 적절하지 않은 말은?", 
+                options: ["① '많이 힘들었겠다, 이야기 들어줄게.'", "② '네가 참아, 시간이 지나면 괜찮아져.'", "③ '어떤 점이 가장 힘드니?'", "④ '전문가에게 도움을 받아보는 건 어떨까?'"], 
+                answer: 1 
+            },
+            { 
+                id: 20, 
+                cat: "마약∙도박 예방교육", 
+                title: "약물 오남용 예방", 
+                url: "https://www.youtube.com/embed/hSy1pk19lnE", 
+                question: "의사 처방 없이 구할 수 없는 약물을 SNS 등을 통해 구매하는 행동은?", 
+                options: ["① 현명한 소비", "② 불법 약물 구매(범죄)", "③ 의료 쇼핑", "④ 직구(직접구매)"], 
+                answer: 1 
+            },
+            { 
+                id: 21, 
+                cat: "금융교육", 
+                title: "보이스피싱 예방", 
+                url: "https://www.youtube.com/embed/IBJmlnmGR_E", 
+                question: "검찰이나 금융기관을 사칭하며 돈을 이체하라는 전화를 받았다면?", 
+                options: ["① 즉시 시키는 대로 이체한다", "② 일단 끊고 해당 기관의 공식 번호로 확인한다", "③ 내 계좌 비밀번호를 알려준다", "④ 무서우니 친구에게 대신 받게 한다"], 
+                answer: 1 
+            },
+            { 
+                id: 22, 
+                cat: "선거권 교육", 
+                title: "공정한 선거 1", 
+                url: "https://www.youtube.com/embed/JiraPXPCja0", 
+                question: "선거 운동 기간에 후보자에 대한 허위 사실을 유포하는 것은?", 
+                options: ["① 표현의 자유", "② 선거법 위반(범죄)", "③ 정당한 비판", "④ 알 권리 충족"], 
+                answer: 1 
+            },
+            { 
+                id: 23, 
+                cat: "선거권 교육", 
+                title: "공정한 선거 2", 
+                url: "https://www.youtube.com/embed/pmjazh33m_s", 
+                question: "투표소 안에서 하지 말아야 할 행동은?", 
+                options: ["① 신분증 제시", "② 기표소 안에서 투표용지 촬영", "③ 조용히 질서 지키기", "④ 선거 사무원의 안내 따르기"], 
+                answer: 1 
+            },
+            { 
+                id: 24, 
+                cat: "지적재산권 교육", 
+                title: "표절 예방", 
+                url: "https://www.youtube.com/embed/bCkU22-Vyu0", 
+                question: "과제를 할 때 인터넷 자료를 그대로 베껴서 제출하는 행위는?", 
+                options: ["① 참고", "② 인용", "③ 표절", "④ 창작"], 
+                answer: 2 
+            }
         ];
 
         // ==========================================
@@ -149,43 +353,38 @@
             const pageData = videoData.slice(start, end);
 
             pageData.forEach((vid, index) => {
-                // 썸네일은 유튜브 ID로 자동 생성 (예시 URL이면 플레이스홀더)
+                // 유튜브 ID 추출하여 썸네일 생성
                 let thumbUrl = "https://via.placeholder.com/320x180?text=No+Thumbnail";
                 const ytMatch = vid.url.match(/embed\/([^?]+)/);
                 if(ytMatch) thumbUrl = `https://img.youtube.com/vi/${ytMatch[1]}/mqdefault.jpg`;
 
+                // [수정] 카드에 과목명(cat)은 표시하지 않음
                 grid.innerHTML += `
                     <div class="video-card" onclick="openVideoModal(${start + index})">
                         <div class="thumbnail" style="background-image: url('${thumbUrl}')">
                             <div class="play-icon">▶</div>
                         </div>
                         <div class="card-body">
-                            <span class="badge-cat">${vid.cat}</span>
                             <h3 class="video-title">${vid.title}</h3>
                         </div>
                     </div>
                 `;
             });
 
-            // 페이지 버튼 상태 업데이트
             const totalPages = Math.ceil(videoData.length / itemsPerPage);
             document.getElementById('pageInfo').innerText = `${currentPage} / ${totalPages}`;
             document.getElementById('prevBtn').disabled = currentPage === 1;
             document.getElementById('nextBtn').disabled = currentPage === totalPages;
         };
 
-        // 초기 렌더링
         renderVideos();
 
         // ==========================================
         // 3. 모달 및 인증 로직
         // ==========================================
         window.openVideoModal = (index) => {
-            // 전체 데이터에서 인덱스로 가져오기 (페이지네이션 고려 X, 원본 배열 인덱스 찾기 필요)
-            // 위에서 render 시 start+index를 넘겼으므로 videoData의 정확한 인덱스임
             const vid = videoData[index];
 
-            // 퀴즈 옵션 HTML 생성
             let optionsHtml = vid.options.map((opt, i) => 
                 `<label><input type="radio" name="quizAnswer" value="${i}"> ${opt}</label>`
             ).join('');
@@ -203,7 +402,7 @@
                     </div>
 
                     <div class="auth-section">
-                        <div style="font-size:12px; color:#666; margin-bottom:5px; text-align:left;">수료증 발급을 위해 로그인하세요</div>
+                        <div style="font-size:12px; color:#666; margin-bottom:5px; text-align:left;">수료 확인을 위해 로그인하세요</div>
                         <input id="eduId" placeholder="아이디 (이름+생년월일)">
                         <input id="eduPw" type="password" placeholder="비밀번호">
                     </div>
@@ -219,7 +418,7 @@
                     const selected = document.querySelector('input[name="quizAnswer"]:checked');
 
                     if (!selected) return Swal.showValidationMessage("퀴즈 정답을 선택해주세요!");
-                    if (parseInt(selected.value) !== vid.answer) return Swal.showValidationMessage("오답입니다. 다시 영상을 보고 맞춰보세요!");
+                    if (parseInt(selected.value) !== vid.answer) return Swal.showValidationMessage("오답입니다. 영상을 다시 보고 맞춰보세요!");
                     if (!id || !pw) return Swal.showValidationMessage("아이디와 비밀번호를 입력해주세요.");
 
                     return { id, pw, vid };
@@ -255,7 +454,20 @@
                 const userId = userDoc.id;
                 const userData = userDoc.data();
 
-                // 2. 수강 기록 저장 (education_records 컬렉션)
+                // [수정] 중복 수강 체크 (해당 학생이, 해당 영상을 이미 수강했는지)
+                const checkQ = query(
+                    collection(db, "education_records"), 
+                    where("student_id", "==", userId),
+                    where("video_title", "==", data.vid.title)
+                );
+                const checkSnap = await getDocs(checkQ);
+
+                if(!checkSnap.empty) {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    return Swal.fire('이미 수료함', '이미 수료한 강의입니다.', 'warning');
+                }
+
+                // 2. 수강 기록 저장
                 const today = new Date();
                 const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
@@ -264,7 +476,7 @@
                     student_name: userData.name,
                     student_birth: birth,
                     video_title: data.vid.title,
-                    category: data.vid.cat,
+                    category: data.vid.cat, // DB에는 카테고리 저장
                     date: todayStr,
                     timestamp: Timestamp.now()
                 });
