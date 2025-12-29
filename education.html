@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기초소양교육 - 꿈드림</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Education Page Specific Styles */
+        .header { text-align: center; margin-bottom: 30px; margin-top: 10px; }
+        .header h1 { color: #2d3436; margin: 0; font-size: 28px; font-weight: 800; }
+        .header p { color: #636e72; margin: 5px 0 0; }
+
+        .container-wide {
+            max-width: 1000px; margin: 0 auto; padding: 20px;
+        }
+
+        /* Video Grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            cursor: pointer;
+            border: 1px solid #eee;
+        }
+        .video-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+        .thumbnail {
+            width: 100%; aspect-ratio: 16/9;
+            background-size: cover; background-position: center;
+            position: relative;
+        }
+        .play-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 40px; color: rgba(255,255,255,0.9); text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .card-body { padding: 15px; }
+        .badge-cat { 
+            background: #e3f2fd; color: #2196f3; padding: 3px 8px; 
+            border-radius: 5px; font-size: 11px; font-weight: bold; display: inline-block; margin-bottom: 5px;
+        }
+        .video-title { font-size: 15px; font-weight: bold; color: #333; margin: 0; line-height: 1.4; }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .page-btn {
+            background: white; border: 1px solid #ddd; padding: 8px 15px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; color: #555;
+        }
+        .page-btn:hover { background: #f8f9fa; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Modal Inner Styles */
+        .modal-video-wrap {
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; 
+            border-radius: 12px; margin-bottom: 20px; background: #000;
+        }
+        .modal-video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        
+        .quiz-section { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left; }
+        .quiz-q { font-weight: bold; margin-bottom: 10px; color: #2d3436; }
+        .quiz-options label { display: block; margin-bottom: 5px; cursor: pointer; }
+        
+        .auth-section { border-top: 1px solid #eee; padding-top: 20px; }
+        .auth-section input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn-submit { width: 100%; background: #6C5CE7; color: white; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-submit:hover { background: #5a4ad1; }
+
+        .back-home { position: absolute; top: 20px; left: 20px; text-decoration: none; font-weight: bold; color: #666; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-home">← 홈으로</a>
+
+    <div class="glass-container container-wide">
+        <div class="header">
+            <h1>📚 기초소양교육</h1>
+            <p>영상을 시청하고 퀴즈를 맞히면 수료가 인정됩니다.</p>
+        </div>
+
+        <div class="video-grid" id="videoGrid">
+            </div>
+
+        <div class="pagination">
+            <button class="page-btn" id="prevBtn" onclick="changePage(-1)">이전</button>
+            <span id="pageInfo" style="display:flex; align-items:center; font-weight:bold; color:#555;">1 / 1</span>
+            <button class="page-btn" id="nextBtn" onclick="changePage(1)">다음</button>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #6C5CE7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    </div>
+
+    <script type="module">
+        import { db, collection, addDoc, query, where, getDocs, Timestamp } from "./js/firebase-config.js";
+
+        // ==========================================
+        // 1. 강의 데이터 (나중에 이 부분만 수정하면 됨)
+        // ==========================================
+        const videoData = [
+            { id: 1, cat: "권리교육", title: "청소년 노동인권, 이것만은 알자!", url: "https://www.youtube.com/embed/example1", question: "청소년도 근로계약서를 써야 할까요?", options: ["써야 한다", "안 써도 된다"], answer: 0 },
+            { id: 2, cat: "디지털", title: "스마트폰 과의존 예방 교육", url: "https://www.youtube.com/embed/example2", question: "스마트폰을 잠시 내려놓는 시간은?", options: ["디지털 디톡스", "디지털 중독"], answer: 0 },
+            { id: 3, cat: "성교육", title: "올바른 성지식과 에티켓", url: "https://www.youtube.com/embed/example3", question: "상대방의 동의 없는 접촉은?", options: ["사랑이다", "폭력이다"], answer: 1 },
+            { id: 4, cat: "안전", title: "지진 발생 시 대피요령", url: "https://www.youtube.com/embed/example4", question: "지진이 나면 어디로 숨을까요?", options: ["책상 아래", "창문 옆"], answer: 0 },
+            { id: 5, cat: "환경", title: "분리수거의 달인 되기", url: "https://www.youtube.com/embed/example5", question: "플라스틱은 씻어서 버려야 할까요?", options: ["그냥 버린다", "씻어서 버린다"], answer: 1 },
+            { id: 6, cat: "진로", title: "미래 직업 탐색 가이드", url: "https://www.youtube.com/embed/example6", question: "좋아하는 일을 찾는 과정은?", options: ["진로 탐색", "시간 낭비"], answer: 0 },
+            { id: 7, cat: "경제", title: "청소년 금융 상식 기초", url: "https://www.youtube.com/embed/example7", question: "돈을 계획적으로 쓰는 것은?", options: ["용돈 기입장", "충동 구매"], answer: 0 },
+            { id: 8, cat: "폭력예방", title: "학교폭력, 방관자가 되지 말자", url: "https://www.youtube.com/embed/example8", question: "학교폭력을 목격하면?", options: ["신고한다", "모른척한다"], answer: 0 },
+            { id: 9, cat: "건강", title: "올바른 식습관과 영양", url: "https://www.youtube.com/embed/example9", question: "아침 식사는?", options: ["먹는 게 좋다", "굶는 게 좋다"], answer: 0 },
+            { id: 10, cat: "역사", title: "우리나라 독립운동의 역사", url: "https://www.youtube.com/embed/example10", question: "3.1 운동이 일어난 해는?", options: ["1919년", "1945년"], answer: 0 },
+        ];
+
+        // ==========================================
+        // 2. 페이지네이션 로직
+        // ==========================================
+        let currentPage = 1;
+        const itemsPerPage = 8;
+
+        window.changePage = (direction) => {
+            const totalPages = Math.ceil(videoData.length / itemsPerPage);
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderVideos();
+            }
+        };
+
+        const renderVideos = () => {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = "";
+            
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = videoData.slice(start, end);
+
+            pageData.forEach((vid, index) => {
+                // 썸네일은 유튜브 ID로 자동 생성 (예시 URL이면 플레이스홀더)
+                let thumbUrl = "https://via.placeholder.com/320x180?text=No+Thumbnail";
+                const ytMatch = vid.url.match(/embed\/([^?]+)/);
+                if(ytMatch) thumbUrl = `https://img.youtube.com/vi/${ytMatch[1]}/mqdefault.jpg`;
+
+                grid.innerHTML += `
+                    <div class="video-card" onclick="openVideoModal(${start + index})">
+                        <div class="thumbnail" style="background-image: url('${thumbUrl}')">
+                            <div class="play-icon">▶</div>
+                        </div>
+                        <div class="card-body">
+                            <span class="badge-cat">${vid.cat}</span>
+                            <h3 class="video-title">${vid.title}</h3>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // 페이지 버튼 상태 업데이트
+            const totalPages = Math.ceil(videoData.length / itemsPerPage);
+            document.getElementById('pageInfo').innerText = `${currentPage} / ${totalPages}`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages;
+        };
+
+        // 초기 렌더링
+        renderVideos();
+
+        // ==========================================
+        // 3. 모달 및 인증 로직
+        // ==========================================
+        window.openVideoModal = (index) => {
+            // 전체 데이터에서 인덱스로 가져오기 (페이지네이션 고려 X, 원본 배열 인덱스 찾기 필요)
+            // 위에서 render 시 start+index를 넘겼으므로 videoData의 정확한 인덱스임
+            const vid = videoData[index];
+
+            // 퀴즈 옵션 HTML 생성
+            let optionsHtml = vid.options.map((opt, i) => 
+                `<label><input type="radio" name="quizAnswer" value="${i}"> ${opt}</label>`
+            ).join('');
+
+            Swal.fire({
+                title: vid.title,
+                html: `
+                    <div class="modal-video-wrap">
+                        <iframe src="${vid.url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+                    
+                    <div class="quiz-section">
+                        <div class="quiz-q">Q. ${vid.question}</div>
+                        <div class="quiz-options">${optionsHtml}</div>
+                    </div>
+
+                    <div class="auth-section">
+                        <div style="font-size:12px; color:#666; margin-bottom:5px; text-align:left;">수료증 발급을 위해 로그인하세요</div>
+                        <input id="eduId" placeholder="아이디 (이름+생년월일)">
+                        <input id="eduPw" type="password" placeholder="비밀번호">
+                    </div>
+                `,
+                width: 600,
+                showConfirmButton: true,
+                confirmButtonText: '제출 및 수료 확인',
+                confirmButtonColor: '#6C5CE7',
+                showCloseButton: true,
+                preConfirm: async () => {
+                    const id = document.getElementById('eduId').value;
+                    const pw = document.getElementById('eduPw').value;
+                    const selected = document.querySelector('input[name="quizAnswer"]:checked');
+
+                    if (!selected) return Swal.showValidationMessage("퀴즈 정답을 선택해주세요!");
+                    if (parseInt(selected.value) !== vid.answer) return Swal.showValidationMessage("오답입니다. 다시 영상을 보고 맞춰보세요!");
+                    if (!id || !pw) return Swal.showValidationMessage("아이디와 비밀번호를 입력해주세요.");
+
+                    return { id, pw, vid };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processSubmission(result.value);
+                }
+            });
+        };
+
+        const processSubmission = async (data) => {
+            const rawId = data.id.replace(/\s/g, '');
+            const idMatch = rawId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+            
+            if(!idMatch) return Swal.fire('오류', '아이디 형식이 올바르지 않습니다.', 'error');
+            const name = idMatch[1];
+            const birth = idMatch[2];
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            try {
+                // 1. 유저 인증
+                const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", data.pw));
+                const snapshot = await getDocs(q);
+
+                if(snapshot.empty) {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    return Swal.fire('인증 실패', '회원 정보가 틀립니다.', 'error');
+                }
+
+                const userDoc = snapshot.docs[0];
+                const userId = userDoc.id;
+                const userData = userDoc.data();
+
+                // 2. 수강 기록 저장 (education_records 컬렉션)
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+                await addDoc(collection(db, "education_records"), {
+                    student_id: userId,
+                    student_name: userData.name,
+                    student_birth: birth,
+                    video_title: data.vid.title,
+                    category: data.vid.cat,
+                    date: todayStr,
+                    timestamp: Timestamp.now()
+                });
+
+                document.getElementById('loadingOverlay').style.display = 'none';
+                Swal.fire({
+                    icon: 'success',
+                    title: '수료 완료! 🎉',
+                    text: `${userData.name}님, [${data.vid.title}] 교육 수료가 확인되었습니다.`
+                });
+
+            } catch(e) {
+                console.error(e);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                Swal.fire('오류', '처리 중 문제가 발생했습니다.', 'error');
+            }
+        };
+    </script>
+</body>
+</html>
