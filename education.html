@@ -21,7 +21,7 @@
             color: var(--text-main);
         }
 
-        /* 1. 상단 타이틀 바 (링크 기능 제거됨) */
+        /* 1. 상단 네비게이션 */
         .navbar {
             background: white;
             height: 60px;
@@ -31,18 +31,19 @@
             padding: 0 20px;
         }
         .nav-content {
-            width: 100%; max-width: 1000px;
+            width: 100%; max-width: 1200px; /* 폭을 넓힘 */
             display: flex; align-items: center; justify-content: space-between;
         }
         .logo-text {
             font-size: 18px; font-weight: 800; color: var(--primary);
-            display: flex; align-items: center; gap: 8px; cursor: default; /* 클릭 안됨 */
+            display: flex; align-items: center; gap: 8px; cursor: default;
         }
         .page-title { font-size: 16px; font-weight: 600; color: #636E72; }
 
         /* 2. 메인 컨텐츠 영역 */
         .container {
-            max-width: 1000px; margin: 30px auto; padding: 0 20px;
+            max-width: 1200px; /* [수정] 4열 배치를 위해 폭을 1200px로 넓힘 */
+            margin: 30px auto; padding: 0 20px;
         }
         .hero-text {
             text-align: center; margin-bottom: 40px;
@@ -50,12 +51,20 @@
         .hero-text h2 { font-size: 24px; margin: 0 0 10px 0; color: var(--text-main); }
         .hero-text p { font-size: 15px; color: #95A5A6; margin: 0; }
 
-        /* 3. 비디오 그리드 (카드형) */
+        /* 3. 비디오 그리드 (카드형) - [수정됨] */
         .video-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
+            /* 기본(모바일): 자동 반응형 */
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+
+        /* [중요] PC 화면(1024px 이상)에서는 무조건 4열(한 줄에 4개) 강제 고정 */
+        @media (min-width: 1024px) {
+            .video-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+            }
         }
 
         .video-card {
@@ -418,10 +427,10 @@
         ];
 
         // ==========================================
-        // 2. 페이지네이션 로직
+        // 2. 페이지네이션 로직 (8개씩 4열 2행)
         // ==========================================
         let currentPage = 1;
-        const itemsPerPage = 8;
+        const itemsPerPage = 8; // 한 페이지 8개 (4x2)
 
         window.changePage = (direction) => {
             const totalPages = Math.ceil(videoData.length / itemsPerPage);
@@ -429,7 +438,7 @@
             if (newPage >= 1 && newPage <= totalPages) {
                 currentPage = newPage;
                 renderVideos();
-                window.scrollTo(0, 0); // 페이지 변경 시 맨 위로
+                window.scrollTo(0, 0); 
             }
         };
 
@@ -442,7 +451,6 @@
             const pageData = videoData.slice(start, end);
 
             pageData.forEach((vid, index) => {
-                // 유튜브 썸네일 고화질(hqdefault) or 최대화질(maxresdefault)
                 let thumbUrl = "https://via.placeholder.com/320x180?text=No+Thumbnail";
                 const ytMatch = vid.url.match(/embed\/([^?]+)/);
                 if(ytMatch) thumbUrl = `https://img.youtube.com/vi/${ytMatch[1]}/mqdefault.jpg`;
