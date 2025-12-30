@@ -5,32 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>노원구 꿈드림 - 센터 키오스크</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Page Specific Styles for Kiosk */
-        .header { margin-bottom: 25px; margin-top: 10px; }
+        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; }
+
+        /* --- [수정] 반응형 레이아웃 스타일 --- */
+        .glass-container { 
+            max-width: 600px; /* 기본 모바일 폭 */
+            width: 95%; margin: 30px auto; padding: 25px; 
+            transition: max-width 0.3s ease;
+        }
+
+        /* PC 화면 (폭 1000px 이상) */
+        @media (min-width: 1000px) {
+            .glass-container { max-width: 1100px; } /* 폭을 넓힘 */
+            
+            /* 2단 그리드 레이아웃 */
+            .dashboard-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* 1:1 비율 */
+                gap: 30px;
+                align-items: start;
+            }
+            
+            /* PC에서는 배너가 2개 나란히 */
+            .ad-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+
+        /* Header */
+        .header { margin-bottom: 20px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; color: #2d3436; margin: 0; }
         
         /* Top Links */
-        .top-link-area { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .top-link-area { display: flex; gap: 10px; }
         .top-btn {
-            text-decoration: none; font-size: 12px; font-weight: 700;
+            text-decoration: none; font-size: 13px; font-weight: 700;
             padding: 8px 16px; border-radius: 20px; 
             transition: 0.2s; display: flex; align-items: center; gap: 5px;
-            background: rgba(255,255,255,0.8);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            color: var(--text-gray);
+            background: white; border: 1px solid #dfe6e9;
+            color: #636e72;
         }
-        .top-btn:hover { transform: translateY(-2px); background: white; color: var(--primary-color); }
-        .top-btn.point { background: #ff7675; color: white; }
-        .top-btn.point:hover { background: #d63031; color: white; }
+        .top-btn:hover { transform: translateY(-2px); border-color: var(--primary-color); color: var(--primary-color); }
+        .top-btn.point { background: #ff7675; color: white; border: none; }
+        .top-btn.point:hover { background: #d63031; }
 
-        /* Big Action Buttons */
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        /* Left Section: Big Actions */
+        .big-action-group { display: flex; flex-direction: column; gap: 15px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn-big { 
-            height: 120px; font-size: 20px; 
+            height: 140px; font-size: 20px; 
             display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; gap: 8px;
-            color: white; border-radius: 20px;
+            align-items: center; justify-content: center; gap: 10px;
+            color: white; border-radius: 20px; border: none; cursor: pointer;
+            transition: transform 0.2s;
         }
         .btn-attendance { 
             background: linear-gradient(135deg, #6C5CE7 0%, #a29bfe 100%);
@@ -42,16 +70,18 @@
         }
         .btn-big:hover { transform: translateY(-5px); filter: brightness(1.05); }
 
-        /* Meal Selection */
+        /* Right Section: Meals & Ads */
+        .right-section-group { display: flex; flex-direction: column; gap: 25px; }
+        
         .section-title { 
-            font-size: 17px; color: var(--text-dark); margin: 0 0 15px 5px; 
-            display: flex; align-items: center; gap: 6px;
+            font-size: 18px; color: #2d3436; margin: 0 0 15px 0; 
+            display: flex; align-items: center; gap: 8px; font-weight: 800;
         }
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .btn-meal { 
-            height: 60px; font-size: 15px; background: white; 
-            color: var(--text-dark); border: 2px solid #edeff2;
-            border-radius: 16px; font-weight: 700;
+            height: 70px; font-size: 16px; background: white; 
+            color: #2d3436; border: 2px solid #edeff2;
+            border-radius: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
         }
         .btn-meal:hover { 
             border-color: var(--primary-color); color: var(--primary-color); 
@@ -61,20 +91,18 @@
             background-color: #f1f2f6; color: #b2bec3; 
             cursor: not-allowed; border: none; 
         }
-        .btn-disabled:hover { transform: none; border: none; color: #b2bec3; }
-
+        
         /* Ads */
-        .ad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .ad-grid { display: grid; grid-template-columns: 1fr; gap: 15px; } /* 모바일 1열 */
         .ad-card { 
-            width: 100%; aspect-ratio: 4/5; 
+            width: 100%; height: 120px; 
             background-size: cover; background-position: center; 
-            border-radius: 18px; 
-            border: 4px solid rgba(255,255,255,0.5);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-            cursor: pointer;
+            border-radius: 16px; 
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: transform 0.3s; cursor: pointer;
         }
-        .ad-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
+        .ad-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
         /* SweetAlert Custom Styles */
         .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
@@ -99,13 +127,10 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             text-align: center; color: #333;
         }
-
-        /* [안전장치] 로딩 화면 기본 스타일 (CSS 파일 없을 때 대비) */
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.9); z-index: 10000;
-            display: none; /* 기본 숨김 */
-            justify-content: center; align-items: center; flex-direction: column;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
         }
     </style>
 </head>
@@ -124,37 +149,43 @@
 
     <div class="glass-container" id="mainContent" style="display:none;">
         
-        <div class="top-link-area">
-            <a href="#" onclick="openTutorialModal()" class="top-btn point">▶ 급식 튜토리얼</a>
-            <a href="#" onclick="openRegisterModal()" class="top-btn">🆕 회원가입</a>
-        </div>
-
         <div class="header">
             <h1>노원구 꿈드림</h1>
+            <div class="top-link-area">
+                <a href="#" onclick="openTutorialModal()" class="top-btn point">▶ 급식 튜토리얼</a>
+                <a href="#" onclick="openRegisterModal()" class="top-btn">🆕 회원가입</a>
+            </div>
         </div>
 
-        <div class="main-grid">
-            <button class="btn btn-big btn-attendance" onclick="openCombinedModal('attendance')">
-                <span style="font-size: 36px;">📅</span>
-                <span>출석하기</span>
-            </button>
-            <button class="btn btn-big btn-snack" onclick="openCombinedModal('snack')">
-                <span style="font-size: 36px;">🥪</span>
-                <span>부식 신청</span>
-            </button>
-        </div>
+        <div class="dashboard-layout">
+            
+            <section class="big-action-group">
+                <div class="main-grid">
+                    <button class="btn-big btn-attendance" onclick="openCombinedModal('attendance')">
+                        <span style="font-size: 40px;">📅</span>
+                        <span>출석하기</span>
+                    </button>
+                    <button class="btn-big btn-snack" onclick="openCombinedModal('snack')">
+                        <span style="font-size: 40px;">🥪</span>
+                        <span>부식 신청</span>
+                    </button>
+                </div>
+                <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="ad-card"></div></a>
+            </section>
 
-        <h3 class="section-title">🍚 오늘 뭐 먹지?</h3>
-        <div class="meal-grid">
-            <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-            <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리분식</button>
-            <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
-            <button class="btn btn-meal btn-disabled">준비중</button>
-        </div>
+            <section class="right-section-group">
+                <div>
+                    <h3 class="section-title">🍚 오늘 뭐 먹지?</h3>
+                    <div class="meal-grid">
+                        <button class="btn btn-meal" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
+                        <button class="btn btn-meal" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
+                        <button class="btn btn-meal" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
+                        <button class="btn btn-meal btn-disabled">준비중</button>
+                    </div>
+                </div>
+                <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="ad-card"></div></a>
+            </section>
 
-        <div class="ad-grid">
-            <a id="ad1Link" href="#" target="_blank"><div id="ad1" class="ad-card"></div></a>
-            <a id="ad2Link" href="#" target="_blank"><div id="ad2" class="ad-card"></div></a>
         </div>
     </div>
 
@@ -162,7 +193,7 @@
         import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
         // ============================================
-        // 1. 유틸리티 및 광고 로직 (순서 중요: 위로 이동)
+        // 1. 유틸리티 및 광고 로직
         // ============================================
         const getTodayStr = () => {
             const now = new Date();
@@ -177,8 +208,8 @@
         };
 
         const DEFAULT_ADS = {
-            ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=Ad+1", link: "#" },
-            ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=Ad+2", link: "#" }
+            ad1: { image: "https://via.placeholder.com/400x120/eee/aaa?text=Ad+1", link: "#" },
+            ad2: { image: "https://via.placeholder.com/400x120/ddd/999?text=Ad+2", link: "#" }
         };
 
         const applyDefaultAds = () => {
@@ -201,21 +232,21 @@
         };
 
         // ============================================
-        // 2. 기기 인증 체크 (함수 정의 후 실행)
+        // 2. 기기 인증 체크
         // ============================================
         const checkDeviceAuth = () => {
             const isAuthorized = localStorage.getItem('kiosk_auth_token') === 'dream_center_pc';
             if (isAuthorized) {
                 document.getElementById('blockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
-                loadAds(); // 이제 loadAds가 정의되어 있으므로 에러 안 남
+                loadAds();
             } else {
                 console.log("미인증 기기 접속 차단됨");
             }
         };
 
         // ============================================
-        // 3. 버튼 기능들 (window 객체에 등록)
+        // 3. 버튼 기능들 (자동완성 방지 적용됨)
         // ============================================
         window.openTutorialModal = () => {
             Swal.fire({
@@ -229,19 +260,21 @@
                 showCloseButton: true,
                 showConfirmButton: false,
                 width: 600,
-                background: '#fff',
                 padding: '20px'
             });
         };
 
+        // [수정] 회원가입 모달 - 자동완성 방지 적용
         window.openRegisterModal = async () => {
             const { value: formValues } = await Swal.fire({
                 title: '회원가입',
                 html:
-                    '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)">' +
-                    '<input id="swal-birth" class="swal2-input" type="tel" maxlength="6" placeholder="생년월일 (예: 080101)">' +
-                    '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정">' +
-                    '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
+                    '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)" autocomplete="off">' +
+                    '<input id="swal-birth" class="swal2-input" type="tel" maxlength="6" placeholder="생년월일 (예: 080101)" autocomplete="off">' +
+                    '' +
+                    '<input style="display:none" type="password" name="fakepasswordremembered">' +
+                    '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정" autocomplete="new-password">' +
+                    '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인" autocomplete="new-password">',
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: '가입하기',
@@ -283,6 +316,7 @@
             }
         };
 
+        // [수정] 통합 신청 모달 - 자동완성 방지 적용
         window.openCombinedModal = async (type, targetName = "") => {
             let titleText = "";
             if(type === 'attendance') titleText = "출석 체크";
@@ -310,11 +344,14 @@
             const { value: result } = await Swal.fire({
                 title: titleText,
                 html: activityHtml +
-                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)">' +
-                      '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
+                      '' +
+                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)" autocomplete="off" name="no-autofill-id">' +
+                      '' +
+                      '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호" autocomplete="new-password">',
                 showCancelButton: true,
                 confirmButtonText: '신청 완료',
                 didOpen: () => {
+                    // 라디오 버튼 이벤트 리스너 (선택적)
                     const radios = document.querySelectorAll('input[name="activity"]');
                     radios.forEach(r => {
                         r.addEventListener('change', (e) => {});
@@ -415,7 +452,6 @@
             }
         };
 
-        // 마지막으로 기기 체크 실행 (정의된 이후에)
         checkDeviceAuth();
 
     </script>
