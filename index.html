@@ -89,14 +89,20 @@
 
         /* 왼쪽 하단: 광고 3개 (4:5 비율 고정) */
         .left-bottom {
-            height: 45%; /* 전체 높이의 45% 할당 */
-            display: flex; gap: 20px;
+            /* 상단 버튼과의 비율 조정을 위해 높이를 지정하거나 flex 비율 사용 */
+            flex: 0 0 45%; 
+            display: flex; 
+            gap: 20px;
+            /* [수정됨] 광고들을 가운데 정렬하여 비율 유지 시 빈 공간 자연스럽게 처리 */
+            justify-content: center; 
         }
+        
         .ad-wrapper {
-            /* 높이를 부모에 맞추고, 4:5 비율 유지 -> 너비 자동 조절 */
+            /* [핵심 수정] flex: 1을 제거하고 width: auto로 변경 */
             height: 100%; 
+            width: auto; 
+            /* 가로:세로 = 4:5 비율 강제 */
             aspect-ratio: 4 / 5;
-            flex: 1; /* 공간 균등 분배 시도 */
             
             border-radius: var(--radius-card);
             overflow: hidden;
@@ -105,6 +111,9 @@
             position: relative;
             transition: transform 0.3s;
         }
+        /* 만약 화면이 너무 좁아서 4:5 3개가 안 들어갈 경우를 대비해 최소 크기 지정 (선택사항) */
+        .ad-wrapper { flex-shrink: 1; }
+
         .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
         .ad-img { width: 100%; height: 100%; background-size: cover; background-position: center; display: block; }
 
@@ -130,15 +139,15 @@
         .meal-list {
             flex: 1;
             display: grid;
-            grid-template-columns: 1fr; /* 1열로 쭉 (또는 2열 가능) */
-            grid-template-rows: repeat(4, 1fr); /* 4개 균등 분할 */
+            grid-template-columns: 1fr; 
+            grid-template-rows: repeat(4, 1fr); 
             gap: 15px;
         }
-        /* 이미지 포함된 급식 버튼 스타일 */
+        
         .meal-card-btn {
             background: white; border: 2px solid #F1F3F5;
             border-radius: 20px; cursor: pointer;
-            display: flex; align-items: center; /* 가로 배치 */
+            display: flex; align-items: center; 
             padding: 0; overflow: hidden;
             transition: 0.2s;
             text-align: left;
@@ -149,25 +158,18 @@
         .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
         
         .meal-img-box {
-            width: 110px; height: 100%;
+            width: 100px; height: 100%;
             background-color: #eee;
             background-size: cover; background-position: center;
-            flex-shrink: 0; /* 크기 고정 */
+            flex-shrink: 0; 
         }
         .meal-info {
             padding: 0 20px;
             flex: 1;
         }
-        .meal-name { font-size: 20px; font-weight: 800; color: #495057; display: block; margin-bottom: 5px; }
-        .meal-desc { font-size: 14px; color: #868E96; font-weight: 500; }
+        .meal-name { font-size: 18px; font-weight: 800; color: #495057; display: block; margin-bottom: 4px; }
+        .meal-desc { font-size: 13px; color: #868E96; font-weight: 500; }
         
-        /* 2x2 그리드로 변경하고 싶으면 아래 주석 해제 */
-        .meal-list { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; } 
-        .meal-card-btn { flex-direction: column; align-items: stretch; text-align: center; }
-        .meal-img-box { width: 100%; height: 60%; }
-        .meal-info { height: 40%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; }
-
-
         /* 유틸리티 */
         #loadingOverlay {
             display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -261,31 +263,31 @@
                 
                 <div class="meal-list">
                     <button class="meal-card-btn" onclick="openCombinedModal('meal', '달인보쌈')">
-                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Bossam');"></div>
+                        <div class="meal-img-box" style="background-image: url('https://lh6.googleusercontent.com/proxy/fg-7Jv4MQ5BhHB_TKyR5FMtR7ml9_IArZWnH7NYgJgG2JfmPIUjUOHkERnJ9hMvscTsPLoOMauUHll4ZndknzFoREYeY9ipZwjCDkDo9-sZfX8V_jnk6PIqX9KG_8GFgUZxsuoh7TA');"></div>
                         <div class="meal-info">
                             <span class="meal-name">달인보쌈</span>
-                            <span class="meal-desc">든든한 한끼</span>
+                            <span class="meal-desc">든든한 보쌈 정식</span>
                         </div>
                     </button>
 
                     <button class="meal-card-btn" onclick="openCombinedModal('meal', '미스테리분식')">
-                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Mystery');"></div>
+                        <div class="meal-img-box" style="background-image: url('https://cdn.e2news.com/news/photo/201511/85026_37781_5340.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">미스테리</span>
-                            <span class="meal-desc">분식의 정석</span>
+                            <span class="meal-desc">떡볶이와 튀김</span>
                         </div>
                     </button>
 
                     <button class="meal-card-btn" onclick="openCombinedModal('meal', '연김밥')">
-                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Gimbap');"></div>
+                        <div class="meal-img-box" style="background-image: url('https://newsimg.sedaily.com/2025/01/14/2GNOXAIO35_1.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">연김밥</span>
-                            <span class="meal-desc">간편하고 맛있게</span>
+                            <span class="meal-desc">신선한 재료 김밥</span>
                         </div>
                     </button>
 
                     <button class="meal-card-btn" disabled>
-                        <div class="meal-img-box" style="background-color: #eee; display:flex; align-items:center; justify-content:center; color:#aaa;">🚫</div>
+                        <div class="meal-img-box" style="background-color: #eee; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:24px;">🚫</div>
                         <div class="meal-info">
                             <span class="meal-name">준비중</span>
                             <span class="meal-desc">Comming Soon</span>
