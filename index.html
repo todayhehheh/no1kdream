@@ -9,10 +9,10 @@
     <style>
         :root {
             --primary: #6C5CE7;
-            --bg-body: #E9ECEF;
+            --bg-body: #F4F7F6;
             --text-main: #2D3436;
-            --shadow-card: 0 10px 20px rgba(0,0,0,0.08);
-            --radius-card: 24px;
+            --shadow-card: 0 10px 20px rgba(0,0,0,0.06);
+            --radius-card: 28px;
         }
 
         * { box-sizing: border-box; user-select: none; }
@@ -26,111 +26,147 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* 메인 컨테이너 */
         .kiosk-wrapper {
-            width: 95vw; height: 95vh;
-            background: rgba(255,255,255,0.9);
-            border-radius: 36px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            width: 96%; height: 94vh;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(30px);
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.6);
             padding: 30px 50px;
-            display: flex; flex-direction: column;
-            gap: 20px;
+            display: flex; flex-direction: column; gap: 20px;
         }
 
         /* 1. 헤더 */
         .header {
-            flex: 0 0 60px; /* 고정 높이 */
+            flex: 0 0 60px;
             display: flex; justify-content: space-between; align-items: center;
             position: relative;
         }
         .header-title {
             position: absolute; left: 50%; transform: translateX(-50%);
-            font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0;
+            font-size: 34px; font-weight: 900; color: var(--text-main); margin: 0; letter-spacing: -1px;
         }
         .header-btn {
-            padding: 10px 24px; border-radius: 50px; font-size: 15px; font-weight: 700;
-            border: none; cursor: pointer; transition: 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 10px 24px; border-radius: 50px; font-size: 16px; font-weight: 700;
+            border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .btn-tutorial { background: #FF7675; color: white; }
         .btn-tutorial:hover { transform: scale(1.05); background: #ff5252; }
         .btn-register { background: white; color: var(--primary); border: 2px solid var(--primary); }
         .btn-register:hover { transform: scale(1.05); background: var(--primary); color: white; }
 
-        /* 2. 상단 기능 영역 (남은 공간 채움) */
-        .top-section {
-            flex: 1; /* 가변 높이 */
-            display: grid;
-            grid-template-columns: 1fr 1fr 1.2fr; /* 3열 배치 (급식판 조금 넓게) */
-            gap: 24px;
-            min-height: 0; /* flex 자식 넘침 방지 */
+        /* 2. 메인 레이아웃 (좌우 분할) */
+        .main-grid {
+            flex: 1;
+            display: flex;
+            gap: 30px;
+            height: 100%;
+            overflow: hidden;
         }
 
-        /* 큰 버튼 */
+        /* [왼쪽 영역] 버튼(상) + 광고(하) */
+        .left-column {
+            flex: 1.8; /* 화면의 약 65% */
+            display: flex; flex-direction: column; gap: 25px;
+        }
+
+        /* 왼쪽 상단: 기능 버튼 2개 */
+        .left-top {
+            flex: 1; /* 남은 높이 채움 */
+            display: flex; gap: 25px;
+        }
         .func-card {
-            border-radius: var(--radius-card);
-            border: none; cursor: pointer;
+            flex: 1; border-radius: var(--radius-card); border: none; cursor: pointer;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: 800; color: white;
-            box-shadow: var(--shadow-card);
-            transition: transform 0.2s;
-            gap: 15px;
+            font-size: 26px; font-weight: 800; color: white;
+            box-shadow: var(--shadow-card); transition: transform 0.2s; gap: 15px;
         }
         .func-card:hover { transform: translateY(-5px); filter: brightness(1.05); }
         .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
         .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
-        .emoji { font-size: 56px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        .emoji { font-size: 60px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
 
-        /* 급식 메뉴판 */
-        .meal-panel {
-            background: white; border-radius: var(--radius-card);
-            padding: 20px; box-shadow: var(--shadow-card);
-            display: flex; flex-direction: column;
+        /* 왼쪽 하단: 광고 3개 (4:5 비율 고정) */
+        .left-bottom {
+            height: 45%; /* 전체 높이의 45% 할당 */
+            display: flex; gap: 20px;
         }
-        .meal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #495057; display:flex; align-items:center; gap:8px;}
-        .meal-grid {
-            flex: 1; display: grid;
-            grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-            gap: 12px;
-        }
-        .meal-btn {
-            background: #F8F9FA; border: 2px solid #E9ECEF; border-radius: 16px;
-            font-size: 18px; font-weight: 700; color: #495057; cursor: pointer; transition: 0.2s;
-        }
-        .meal-btn:hover { background: white; border-color: var(--primary); color: var(--primary); }
-        .meal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-
-        /* 3. 하단 광고 영역 (비율 유지 핵심) */
-        .bottom-section {
-            /* 화면 높이의 55% 정도를 차지하도록 설정 (조절 가능) */
-            flex: 0 0 55%; 
-            display: flex; 
-            justify-content: center; /* 중앙 정렬 */
-            gap: 24px;
-            width: 100%;
-        }
-
         .ad-wrapper {
-            /* 높이를 부모(bottom-section)에 꽉 채움 */
-            height: 100%;
-            /* [핵심] 4:5 비율 강제 적용 -> 너비는 알아서 줄어듦 */
+            /* 높이를 부모에 맞추고, 4:5 비율 유지 -> 너비 자동 조절 */
+            height: 100%; 
             aspect-ratio: 4 / 5;
+            flex: 1; /* 공간 균등 분배 시도 */
             
             border-radius: var(--radius-card);
             overflow: hidden;
             box-shadow: var(--shadow-card);
+            background: #eee;
             position: relative;
-            background: #ddd;
             transition: transform 0.3s;
         }
         .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
+        .ad-img { width: 100%; height: 100%; background-size: cover; background-position: center; display: block; }
 
-        .ad-img {
-            width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            display: block;
+
+        /* [오른쪽 영역] 급식 메뉴판 */
+        .right-column {
+            flex: 1; /* 화면의 약 35% */
+            background: white;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            padding: 30px;
+            display: flex; flex-direction: column;
         }
+        .meal-title-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        }
+        .meal-icon-bg {
+            background: #FF7675; color: white; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .meal-title { font-size: 22px; font-weight: 800; color: var(--text-main); margin: 0; }
+
+        .meal-list {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr; /* 1열로 쭉 (또는 2열 가능) */
+            grid-template-rows: repeat(4, 1fr); /* 4개 균등 분할 */
+            gap: 15px;
+        }
+        /* 이미지 포함된 급식 버튼 스타일 */
+        .meal-card-btn {
+            background: white; border: 2px solid #F1F3F5;
+            border-radius: 20px; cursor: pointer;
+            display: flex; align-items: center; /* 가로 배치 */
+            padding: 0; overflow: hidden;
+            transition: 0.2s;
+            text-align: left;
+        }
+        .meal-card-btn:hover:not(:disabled) {
+            border-color: var(--primary); box-shadow: 0 4px 15px rgba(108, 92, 231, 0.15); transform: translateX(5px);
+        }
+        .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
+        
+        .meal-img-box {
+            width: 110px; height: 100%;
+            background-color: #eee;
+            background-size: cover; background-position: center;
+            flex-shrink: 0; /* 크기 고정 */
+        }
+        .meal-info {
+            padding: 0 20px;
+            flex: 1;
+        }
+        .meal-name { font-size: 20px; font-weight: 800; color: #495057; display: block; margin-bottom: 5px; }
+        .meal-desc { font-size: 14px; color: #868E96; font-weight: 500; }
+        
+        /* 2x2 그리드로 변경하고 싶으면 아래 주석 해제 */
+        .meal-list { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; } 
+        .meal-card-btn { flex-direction: column; align-items: stretch; text-align: center; }
+        .meal-img-box { width: 100%; height: 60%; }
+        .meal-info { height: 40%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; }
+
 
         /* 유틸리티 */
         #loadingOverlay {
@@ -189,40 +225,76 @@
             <button onclick="openRegisterModal()" class="header-btn btn-register">🆕 회원가입</button>
         </header>
 
-        <section class="top-section">
-            <button class="func-card card-attendance" onclick="openCombinedModal('attendance')">
-                <span class="emoji">📅</span>
-                <span>출석하기</span>
-            </button>
+        <div class="main-grid">
             
-            <button class="func-card card-snack" onclick="openCombinedModal('snack')">
-                <span class="emoji">🥪</span>
-                <span>부식 신청</span>
-            </button>
+            <div class="left-column">
+                
+                <div class="left-top">
+                    <button class="func-card card-attendance" onclick="openCombinedModal('attendance')">
+                        <span class="emoji">📅</span>
+                        <span>출석하기</span>
+                    </button>
+                    <button class="func-card card-snack" onclick="openCombinedModal('snack')">
+                        <span class="emoji">🥪</span>
+                        <span>부식 신청</span>
+                    </button>
+                </div>
 
-            <div class="meal-panel">
-                <div class="meal-title">🍚 오늘 뭐 먹지?</div>
-                <div class="meal-grid">
-                    <button class="meal-btn" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-                    <button class="meal-btn" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
-                    <button class="meal-btn" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
-                    <button class="meal-btn" disabled>준비중</button>
+                <div class="left-bottom">
+                    <div class="ad-wrapper">
+                        <a id="ad1Link" href="#" target="_blank" class="ad-img" id="ad1"></a>
+                    </div>
+                    <div class="ad-wrapper">
+                        <a id="ad2Link" href="#" target="_blank" class="ad-img" id="ad2"></a>
+                    </div>
+                    <div class="ad-wrapper">
+                        <a id="ad3Link" href="#" target="_blank" class="ad-img" id="ad3"></a>
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <section class="bottom-section">
-            <div class="ad-wrapper">
-                <a id="ad1Link" href="#" target="_blank" class="ad-img" id="ad1"></a>
-            </div>
-            <div class="ad-wrapper">
-                <a id="ad2Link" href="#" target="_blank" class="ad-img" id="ad2"></a>
-            </div>
-            <div class="ad-wrapper">
-                <a id="ad3Link" href="#" target="_blank" class="ad-img" id="ad3"></a>
-            </div>
-        </section>
+            <div class="right-column">
+                <div class="meal-title-row">
+                    <div class="meal-icon-bg">🍚</div>
+                    <h2 class="meal-title">오늘 뭐 먹지?</h2>
+                </div>
+                
+                <div class="meal-list">
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '달인보쌈')">
+                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Bossam');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">달인보쌈</span>
+                            <span class="meal-desc">든든한 한끼</span>
+                        </div>
+                    </button>
 
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '미스테리분식')">
+                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Mystery');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">미스테리</span>
+                            <span class="meal-desc">분식의 정석</span>
+                        </div>
+                    </button>
+
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '연김밥')">
+                        <div class="meal-img-box" style="background-image: url('https://via.placeholder.com/150?text=Gimbap');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">연김밥</span>
+                            <span class="meal-desc">간편하고 맛있게</span>
+                        </div>
+                    </button>
+
+                    <button class="meal-card-btn" disabled>
+                        <div class="meal-img-box" style="background-color: #eee; display:flex; align-items:center; justify-content:center; color:#aaa;">🚫</div>
+                        <div class="meal-info">
+                            <span class="meal-name">준비중</span>
+                            <span class="meal-desc">Comming Soon</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script type="module">
