@@ -9,13 +9,10 @@
     <style>
         :root {
             --primary: #6C5CE7;
-            --primary-dark: #5a4ad1;
-            --secondary: #FF7675;
-            --bg-body: #F4F7F6;
+            --bg-body: #E9ECEF;
             --text-main: #2D3436;
-            --shadow-soft: 0 10px 25px rgba(0,0,0,0.05);
-            --shadow-hover: 0 15px 35px rgba(108, 92, 231, 0.2);
-            --radius-main: 28px;
+            --shadow-card: 0 10px 20px rgba(0,0,0,0.08);
+            --radius-card: 24px;
         }
 
         * { box-sizing: border-box; user-select: none; }
@@ -29,139 +26,130 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* 전체 레이아웃 컨테이너 */
-        .kiosk-container {
-            width: 96%; height: 94vh;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(30px);
-            border-radius: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.9);
+        /* 메인 컨테이너 */
+        .kiosk-wrapper {
+            width: 95vw; height: 95vh;
+            background: rgba(255,255,255,0.9);
+            border-radius: 36px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             padding: 30px 50px;
             display: flex; flex-direction: column;
+            gap: 20px;
         }
 
-        /* 1. 헤더 영역 */
+        /* 1. 헤더 */
         .header {
+            flex: 0 0 60px; /* 고정 높이 */
             display: flex; justify-content: space-between; align-items: center;
-            height: 70px; margin-bottom: 25px; position: relative;
+            position: relative;
         }
         .header-title {
             position: absolute; left: 50%; transform: translateX(-50%);
-            font-size: 36px; font-weight: 900; color: var(--text-main); margin: 0;
-            letter-spacing: -1px;
+            font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0;
         }
         .header-btn {
-            padding: 12px 28px; border-radius: 50px; font-size: 16px; font-weight: 700;
-            border: none; cursor: pointer; transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 8px;
+            padding: 10px 24px; border-radius: 50px; font-size: 15px; font-weight: 700;
+            border: none; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .btn-tutorial { background: #FF7675; color: white; }
-        .btn-tutorial:hover { background: #e15f5e; transform: scale(1.05); }
+        .btn-tutorial:hover { transform: scale(1.05); background: #ff5252; }
         .btn-register { background: white; color: var(--primary); border: 2px solid var(--primary); }
-        .btn-register:hover { background: var(--primary); color: white; transform: scale(1.05); }
+        .btn-register:hover { transform: scale(1.05); background: var(--primary); color: white; }
 
-        /* 2. 메인 그리드 레이아웃 (상/하 분리) */
-        .content-area {
-            flex: 1;
-            display: flex; flex-direction: column; gap: 30px;
-        }
-
-        /* [상단] 기능 영역 (높이 45%) - 3열 그리드 */
+        /* 2. 상단 기능 영역 (남은 공간 채움) */
         .top-section {
-            flex: 0.85; /* 비율 조정 */
+            flex: 1; /* 가변 높이 */
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* 정확히 3등분 */
-            gap: 25px;
+            grid-template-columns: 1fr 1fr 1.2fr; /* 3열 배치 (급식판 조금 넓게) */
+            gap: 24px;
+            min-height: 0; /* flex 자식 넘침 방지 */
         }
 
-        /* 큰 버튼 스타일 */
-        .big-card {
-            border-radius: var(--radius-main);
+        /* 큰 버튼 */
+        .func-card {
+            border-radius: var(--radius-card);
             border: none; cursor: pointer;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: var(--shadow-soft);
-            color: white; font-weight: 800; font-size: 26px; gap: 15px;
-            position: relative; overflow: hidden;
+            font-size: 24px; font-weight: 800; color: white;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.2s;
+            gap: 15px;
         }
-        .big-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
-        .big-card::after { /* 광택 효과 */
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(to bottom right, rgba(255,255,255,0.2), transparent);
-            transform: rotate(30deg); pointer-events: none;
-        }
+        .func-card:hover { transform: translateY(-5px); filter: brightness(1.05); }
+        .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
+        .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
+        .emoji { font-size: 56px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
 
-        .card-attendance { background: linear-gradient(135deg, #6C5CE7 0%, #8e7bf5 100%); }
-        .card-snack { background: linear-gradient(135deg, #FF7675 0%, #fab1a0 100%); }
-        
-        .emoji-icon { font-size: 64px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2)); }
-
-        /* 급식 메뉴판 (상단 3번째 칸) */
+        /* 급식 메뉴판 */
         .meal-panel {
-            background: white; border-radius: var(--radius-main);
-            box-shadow: var(--shadow-soft); padding: 25px;
+            background: white; border-radius: var(--radius-card);
+            padding: 20px; box-shadow: var(--shadow-card);
             display: flex; flex-direction: column;
         }
-        .meal-title { font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-        
+        .meal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #495057; display:flex; align-items:center; gap:8px;}
         .meal-grid {
             flex: 1; display: grid;
             grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
             gap: 12px;
         }
         .meal-btn {
-            border: 2px solid #F1F3F5; background: #F8F9FA; border-radius: 18px;
-            font-size: 18px; font-weight: 700; color: #495057;
-            cursor: pointer; transition: 0.2s;
+            background: #F8F9FA; border: 2px solid #E9ECEF; border-radius: 16px;
+            font-size: 18px; font-weight: 700; color: #495057; cursor: pointer; transition: 0.2s;
         }
-        .meal-btn:hover {
-            background: white; border-color: var(--primary); color: var(--primary);
-            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
-        }
+        .meal-btn:hover { background: white; border-color: var(--primary); color: var(--primary); }
         .meal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* [하단] 광고 영역 (높이 55%) - 3열 그리드 */
+
+        /* 3. 하단 광고 영역 (비율 유지 핵심) */
         .bottom-section {
-            flex: 1.15; /* 상단보다 조금 더 길게 */
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* 위와 똑같이 3등분 (라인 맞춤) */
-            gap: 25px;
+            /* 화면 높이의 55% 정도를 차지하도록 설정 (조절 가능) */
+            flex: 0 0 55%; 
+            display: flex; 
+            justify-content: center; /* 중앙 정렬 */
+            gap: 24px;
+            width: 100%;
         }
 
-        .ad-card {
-            width: 100%; height: 100%;
-            border-radius: var(--radius-main);
+        .ad-wrapper {
+            /* 높이를 부모(bottom-section)에 꽉 채움 */
+            height: 100%;
+            /* [핵심] 4:5 비율 강제 적용 -> 너비는 알아서 줄어듦 */
+            aspect-ratio: 4 / 5;
+            
+            border-radius: var(--radius-card);
             overflow: hidden;
-            box-shadow: var(--shadow-soft);
-            position: relative; background: #eee;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            background: #ddd;
             transition: transform 0.3s;
-            cursor: pointer;
         }
-        .ad-card:hover { transform: translateY(-5px) scale(1.01); }
+        .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
+
         .ad-img {
             width: 100%; height: 100%;
             background-size: cover; background-position: center;
+            display: block;
         }
-        .ad-link { display: block; width: 100%; height: 100%; }
 
-        /* 로딩 및 차단 화면 */
+        /* 유틸리티 */
         #loadingOverlay {
             display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); z-index: 10000;
+            background: rgba(255,255,255,0.85); z-index: 10000;
             justify-content: center; align-items: center; flex-direction: column;
         }
         .spinner {
             border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
             border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         #blockScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #f0f2f5; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             text-align: center; color: #333;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* SweetAlert Custom */
         .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
@@ -193,7 +181,7 @@
         <p style="margin-top:20px; font-weight:bold; color:#555;">처리중입니다...</p>
     </div>
 
-    <div class="kiosk-container" id="mainContent" style="display:none;">
+    <div class="kiosk-wrapper" id="mainContent" style="display:none;">
         
         <header class="header">
             <button onclick="openTutorialModal()" class="header-btn btn-tutorial">▶ 급식 튜토리얼</button>
@@ -201,49 +189,40 @@
             <button onclick="openRegisterModal()" class="header-btn btn-register">🆕 회원가입</button>
         </header>
 
-        <div class="content-area">
+        <section class="top-section">
+            <button class="func-card card-attendance" onclick="openCombinedModal('attendance')">
+                <span class="emoji">📅</span>
+                <span>출석하기</span>
+            </button>
             
-            <div class="top-section">
-                <button class="big-card card-attendance" onclick="openCombinedModal('attendance')">
-                    <span class="emoji-icon">📅</span>
-                    <span>출석하기</span>
-                </button>
-                
-                <button class="big-card card-snack" onclick="openCombinedModal('snack')">
-                    <span class="emoji-icon">🥪</span>
-                    <span>부식 신청</span>
-                </button>
+            <button class="func-card card-snack" onclick="openCombinedModal('snack')">
+                <span class="emoji">🥪</span>
+                <span>부식 신청</span>
+            </button>
 
-                <div class="meal-panel">
-                    <div class="meal-title">🍚 오늘 뭐 먹지?</div>
-                    <div class="meal-grid">
-                        <button class="meal-btn" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
-                        <button class="meal-btn" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
-                        <button class="meal-btn" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
-                        <button class="meal-btn" disabled>준비중</button>
-                    </div>
+            <div class="meal-panel">
+                <div class="meal-title">🍚 오늘 뭐 먹지?</div>
+                <div class="meal-grid">
+                    <button class="meal-btn" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
+                    <button class="meal-btn" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
+                    <button class="meal-btn" onclick="openCombinedModal('meal', '연김밥')">연김밥</button>
+                    <button class="meal-btn" disabled>준비중</button>
                 </div>
             </div>
+        </section>
 
-            <div class="bottom-section">
-                <div class="ad-card" title="광고1">
-                    <a id="ad1Link" href="#" target="_blank" class="ad-link">
-                        <div id="ad1" class="ad-img"></div>
-                    </a>
-                </div>
-                <div class="ad-card" title="광고2">
-                    <a id="ad2Link" href="#" target="_blank" class="ad-link">
-                        <div id="ad2" class="ad-img"></div>
-                    </a>
-                </div>
-                <div class="ad-card" title="광고3">
-                    <a id="ad3Link" href="#" target="_blank" class="ad-link">
-                        <div id="ad3" class="ad-img"></div>
-                    </a>
-                </div>
+        <section class="bottom-section">
+            <div class="ad-wrapper">
+                <a id="ad1Link" href="#" target="_blank" class="ad-img" id="ad1"></a>
             </div>
+            <div class="ad-wrapper">
+                <a id="ad2Link" href="#" target="_blank" class="ad-img" id="ad2"></a>
+            </div>
+            <div class="ad-wrapper">
+                <a id="ad3Link" href="#" target="_blank" class="ad-img" id="ad3"></a>
+            </div>
+        </section>
 
-        </div>
     </div>
 
     <script type="module">
@@ -280,17 +259,16 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
-                    else document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
-                    if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
-
-                    if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
-                    else document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
-                    if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
-
-                    if(data.ad3_img) document.getElementById('ad3').style.backgroundImage = `url('${data.ad3_img}')`;
-                    else document.getElementById('ad3').style.backgroundImage = `url('${DEFAULT_ADS.ad3.image}')`;
-                    if(data.ad3_link) document.getElementById('ad3Link').href = data.ad3_link;
+                    const setAd = (id, linkId, imgKey, linkKey, def) => {
+                        const el = document.getElementById(id);
+                        const linkEl = document.getElementById(linkId);
+                        if(data[imgKey]) el.style.backgroundImage = `url('${data[imgKey]}')`;
+                        else el.style.backgroundImage = `url('${def.image}')`;
+                        if(data[linkKey]) linkEl.href = data[linkKey];
+                    };
+                    setAd('ad1', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
+                    setAd('ad2', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
+                    setAd('ad3', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
                 } else applyDefaultAds();
             } catch(e) { applyDefaultAds(); }
         };
@@ -305,7 +283,7 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- 모달 로직 ---
+        // --- 모달 로직 (이전과 동일) ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
@@ -325,27 +303,23 @@
                       '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정">' +
                       '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
                 focusConfirm: false, showCancelButton: true, confirmButtonText: '가입하기',
-                preConfirm: () => {
-                    return [
-                        document.getElementById('swal-name').value,
-                        document.getElementById('swal-birth').value,
-                        document.getElementById('swal-pw').value,
-                        document.getElementById('swal-pw2').value
-                    ]
-                }
+                preConfirm: () => [
+                    document.getElementById('swal-name').value,
+                    document.getElementById('swal-birth').value,
+                    document.getElementById('swal-pw').value,
+                    document.getElementById('swal-pw2').value
+                ]
             });
 
             if (formValues) {
                 const [name, birth, pw, pw2] = formValues;
                 if(!name || birth.length !== 6 || !pw) return Swal.fire('오류', '모든 정보를 입력해주세요.', 'error');
                 if(pw !== pw2) return Swal.fire('오류', '비밀번호가 일치하지 않습니다.', 'error');
-
                 showLoading(true);
                 try {
                     const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
                     const snap = await getDocs(q);
                     if(!snap.empty) { showLoading(false); return Swal.fire('오류', '이미 가입된 회원입니다.', 'warning'); }
-                    
                     await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
                     showLoading(false); Swal.fire('성공', '회원가입이 완료되었습니다!', 'success');
                 } catch(e) { showLoading(false); Swal.fire('오류', '시스템 오류', 'error'); }
