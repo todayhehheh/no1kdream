@@ -9,124 +9,143 @@
     <style>
         :root {
             --primary: #6C5CE7;
-            --bg-color: #F0F2F5;
-            --text-dark: #2D3436;
-            --shadow: 0 8px 30px rgba(0,0,0,0.08);
+            --primary-dark: #5a4ad1;
+            --secondary: #FF7675;
+            --bg-body: #F4F7F6;
+            --text-main: #2D3436;
+            --shadow-soft: 0 10px 25px rgba(0,0,0,0.05);
+            --shadow-hover: 0 15px 35px rgba(108, 92, 231, 0.2);
+            --radius-main: 28px;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; user-select: none; }
 
         body {
             margin: 0; padding: 0;
             font-family: 'Pretendard', sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-body);
             height: 100vh;
             overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
 
+        /* 전체 레이아웃 컨테이너 */
         .kiosk-container {
-            width: 95%; height: 95vh;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: 30px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.8);
-            padding: 25px 40px;
+            width: 96%; height: 94vh;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px);
+            border-radius: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.9);
+            padding: 30px 50px;
             display: flex; flex-direction: column;
         }
 
-        /* 1. 헤더 */
+        /* 1. 헤더 영역 */
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            height: 60px; margin-bottom: 20px; position: relative;
+            height: 70px; margin-bottom: 25px; position: relative;
         }
         .header-title {
             position: absolute; left: 50%; transform: translateX(-50%);
-            font-size: 32px; font-weight: 900; color: var(--text-dark); margin: 0;
+            font-size: 36px; font-weight: 900; color: var(--text-main); margin: 0;
+            letter-spacing: -1px;
         }
         .header-btn {
-            padding: 10px 20px; border-radius: 50px; font-size: 15px; font-weight: 700;
-            border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 12px 28px; border-radius: 50px; font-size: 16px; font-weight: 700;
+            border: none; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 8px;
         }
         .btn-tutorial { background: #FF7675; color: white; }
-        .btn-tutorial:hover { background: #d63031; transform: scale(1.05); }
+        .btn-tutorial:hover { background: #e15f5e; transform: scale(1.05); }
         .btn-register { background: white; color: var(--primary); border: 2px solid var(--primary); }
         .btn-register:hover { background: var(--primary); color: white; transform: scale(1.05); }
 
-        /* 2. 메인 레이아웃 (상하 분리) */
-        .main-layout {
-            display: flex; flex-direction: column;
-            height: 100%; gap: 20px;
+        /* 2. 메인 그리드 레이아웃 (상/하 분리) */
+        .content-area {
+            flex: 1;
+            display: flex; flex-direction: column; gap: 30px;
         }
 
-        /* [상단] 기능 영역 (40~45%) */
+        /* [상단] 기능 영역 (높이 45%) - 3열 그리드 */
         .top-section {
-            flex: 4; display: flex; gap: 20px;
+            flex: 0.85; /* 비율 조정 */
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* 정확히 3등분 */
+            gap: 25px;
         }
 
-        .big-btn {
-            flex: 1; border-radius: 25px; border: none;
+        /* 큰 버튼 스타일 */
+        .big-card {
+            border-radius: var(--radius-main);
+            border: none; cursor: pointer;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 22px; font-weight: 800; color: white;
-            cursor: pointer; transition: 0.3s; box-shadow: var(--shadow); gap: 10px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: var(--shadow-soft);
+            color: white; font-weight: 800; font-size: 26px; gap: 15px;
+            position: relative; overflow: hidden;
         }
-        .big-btn:hover { transform: translateY(-5px); filter: brightness(1.1); }
-        .card-attendance { background: linear-gradient(135deg, #6C5CE7, #a29bfe); }
-        .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
-        .emoji-icon { font-size: 50px; }
+        .big-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
+        .big-card::after { /* 광택 효과 */
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0.2), transparent);
+            transform: rotate(30deg); pointer-events: none;
+        }
 
-        /* 급식 메뉴판 */
-        .meal-section {
-            flex: 1.5; /* 버튼보다 좀 더 넓게 */
-            background: white; border-radius: 25px; padding: 20px;
-            box-shadow: var(--shadow); display: flex; flex-direction: column;
+        .card-attendance { background: linear-gradient(135deg, #6C5CE7 0%, #8e7bf5 100%); }
+        .card-snack { background: linear-gradient(135deg, #FF7675 0%, #fab1a0 100%); }
+        
+        .emoji-icon { font-size: 64px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2)); }
+
+        /* 급식 메뉴판 (상단 3번째 칸) */
+        .meal-panel {
+            background: white; border-radius: var(--radius-main);
+            box-shadow: var(--shadow-soft); padding: 25px;
+            display: flex; flex-direction: column;
         }
-        .section-header { font-size: 18px; font-weight: 800; color: var(--text-dark); margin-bottom: 15px; }
+        .meal-title { font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        
         .meal-grid {
-            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-            gap: 12px; height: 100%;
+            flex: 1; display: grid;
+            grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+            gap: 12px;
         }
         .meal-btn {
-            border: 2px solid #F0F2F5; background: white; border-radius: 15px;
-            font-size: 18px; font-weight: 700; color: var(--text-dark);
+            border: 2px solid #F1F3F5; background: #F8F9FA; border-radius: 18px;
+            font-size: 18px; font-weight: 700; color: #495057;
             cursor: pointer; transition: 0.2s;
         }
-        .meal-btn:hover { border-color: var(--primary); color: var(--primary); background: #F8F9FA; }
-        .meal-btn:disabled { background: #F8F9FA; color: #B2BEC3; cursor: not-allowed; border: none; }
+        .meal-btn:hover {
+            background: white; border-color: var(--primary); color: var(--primary);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
+        }
+        .meal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* [하단] 광고 영역 (55~60%) */
+        /* [하단] 광고 영역 (높이 55%) - 3열 그리드 */
         .bottom-section {
-            flex: 5.5; 
-            display: flex; justify-content: center; gap: 20px;
-            overflow: hidden; /* 넘치는 것 방지 */
+            flex: 1.15; /* 상단보다 조금 더 길게 */
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* 위와 똑같이 3등분 (라인 맞춤) */
+            gap: 25px;
         }
 
-        .ad-container {
-            height: 100%; /* 부모 높이에 맞춤 */
-            aspect-ratio: 4 / 5; /* [핵심] 인스타 4:5 비율 강제 고정 */
-            border-radius: 25px;
+        .ad-card {
+            width: 100%; height: 100%;
+            border-radius: var(--radius-main);
             overflow: hidden;
-            box-shadow: var(--shadow);
-            position: relative;
-            background: #eee;
+            box-shadow: var(--shadow-soft);
+            position: relative; background: #eee;
             transition: transform 0.3s;
+            cursor: pointer;
         }
-        .ad-container:hover { transform: translateY(-5px); }
-        
+        .ad-card:hover { transform: translateY(-5px) scale(1.01); }
         .ad-img {
             width: 100%; height: 100%;
             background-size: cover; background-position: center;
         }
-        .ad-link { display: block; width: 100%; height: 100%; text-decoration: none; }
+        .ad-link { display: block; width: 100%; height: 100%; }
 
-        /* 유틸리티 */
-        #blockScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #f0f2f5; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; color: #333;
-        }
+        /* 로딩 및 차단 화면 */
         #loadingOverlay {
             display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.8); z-index: 10000;
@@ -136,9 +155,15 @@
             border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
             border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;
         }
+        #blockScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f2f5; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: #333;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* SweetAlert 스타일 */
+        /* SweetAlert Custom */
         .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
         .swal-radio-item { flex: 1; }
         .swal-radio-item input { display: none; }
@@ -176,21 +201,21 @@
             <button onclick="openRegisterModal()" class="header-btn btn-register">🆕 회원가입</button>
         </header>
 
-        <div class="main-layout">
+        <div class="content-area">
             
             <div class="top-section">
-                <button class="big-btn card-attendance" onclick="openCombinedModal('attendance')">
+                <button class="big-card card-attendance" onclick="openCombinedModal('attendance')">
                     <span class="emoji-icon">📅</span>
                     <span>출석하기</span>
                 </button>
                 
-                <button class="big-btn card-snack" onclick="openCombinedModal('snack')">
+                <button class="big-card card-snack" onclick="openCombinedModal('snack')">
                     <span class="emoji-icon">🥪</span>
                     <span>부식 신청</span>
                 </button>
 
-                <div class="meal-section">
-                    <div class="section-header">🍚 오늘 뭐 먹지?</div>
+                <div class="meal-panel">
+                    <div class="meal-title">🍚 오늘 뭐 먹지?</div>
                     <div class="meal-grid">
                         <button class="meal-btn" onclick="openCombinedModal('meal', '달인보쌈')">달인보쌈</button>
                         <button class="meal-btn" onclick="openCombinedModal('meal', '미스테리분식')">미스테리</button>
@@ -201,17 +226,17 @@
             </div>
 
             <div class="bottom-section">
-                <div class="ad-container">
+                <div class="ad-card" title="광고1">
                     <a id="ad1Link" href="#" target="_blank" class="ad-link">
                         <div id="ad1" class="ad-img"></div>
                     </a>
                 </div>
-                <div class="ad-container">
+                <div class="ad-card" title="광고2">
                     <a id="ad2Link" href="#" target="_blank" class="ad-link">
                         <div id="ad2" class="ad-img"></div>
                     </a>
                 </div>
-                <div class="ad-container">
+                <div class="ad-card" title="광고3">
                     <a id="ad3Link" href="#" target="_blank" class="ad-link">
                         <div id="ad3" class="ad-img"></div>
                     </a>
@@ -236,7 +261,7 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- 광고 로드 로직 (3개로 확장) ---
+        // --- 광고 로드 (3개) ---
         const DEFAULT_ADS = {
             ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=AD+1", link: "#" },
             ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=AD+2", link: "#" },
@@ -255,39 +280,32 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    
-                    // 광고 1
                     if(data.ad1_img) document.getElementById('ad1').style.backgroundImage = `url('${data.ad1_img}')`;
                     else document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
                     if(data.ad1_link) document.getElementById('ad1Link').href = data.ad1_link;
 
-                    // 광고 2
                     if(data.ad2_img) document.getElementById('ad2').style.backgroundImage = `url('${data.ad2_img}')`;
                     else document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
                     if(data.ad2_link) document.getElementById('ad2Link').href = data.ad2_link;
 
-                    // 광고 3 (신규)
                     if(data.ad3_img) document.getElementById('ad3').style.backgroundImage = `url('${data.ad3_img}')`;
                     else document.getElementById('ad3').style.backgroundImage = `url('${DEFAULT_ADS.ad3.image}')`;
                     if(data.ad3_link) document.getElementById('ad3Link').href = data.ad3_link;
-
                 } else applyDefaultAds();
             } catch(e) { applyDefaultAds(); }
         };
 
-        // --- 기기 인증 ---
+        // --- 인증 체크 ---
         const checkDeviceAuth = () => {
             const isAuthorized = localStorage.getItem('kiosk_auth_token') === 'dream_center_pc';
             if (isAuthorized) {
                 document.getElementById('blockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'flex';
                 loadAds();
-            } else {
-                console.log("미인증 기기");
-            }
+            } else { console.log("미인증 기기"); }
         };
 
-        // --- 버튼 기능 ---
+        // --- 모달 로직 ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
