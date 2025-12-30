@@ -28,7 +28,7 @@
 
         .kiosk-wrapper {
             width: 96%; height: 94vh;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             backdrop-filter: blur(30px);
             border-radius: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.08);
@@ -68,41 +68,41 @@
         /* [왼쪽 영역] 버튼(상) + 광고(하) */
         .left-column {
             flex: 1.8; /* 화면의 약 65% */
-            display: flex; flex-direction: column; gap: 25px;
+            display: flex; flex-direction: column; gap: 20px;
         }
 
-        /* 왼쪽 상단: 기능 버튼 2개 */
+        /* [수정됨] 왼쪽 상단: 기능 버튼 (높이를 줄임: 약 28%) */
         .left-top {
-            flex: 1; /* 남은 높이 채움 */
+            flex: 0 0 28%; /* 고정 비율 */
             display: flex; gap: 25px;
         }
         .func-card {
             flex: 1; border-radius: var(--radius-card); border: none; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 26px; font-weight: 800; color: white;
-            box-shadow: var(--shadow-card); transition: transform 0.2s; gap: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; /* 가로 배치 */
+            font-size: 24px; font-weight: 800; color: white;
+            box-shadow: var(--shadow-card); transition: transform 0.2s; gap: 10px;
         }
+        /* 버튼이 납작해졌으므로 내부 요소 배치 조정 */
+        .func-card .emoji { font-size: 48px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        
         .func-card:hover { transform: translateY(-5px); filter: brightness(1.05); }
         .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
         .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
-        .emoji { font-size: 60px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        
 
-        /* 왼쪽 하단: 광고 3개 (4:5 비율 고정) */
+        /* [수정됨] 왼쪽 하단: 광고 3개 (높이를 키움: 나머지 전부) */
         .left-bottom {
-            /* 상단 버튼과의 비율 조정을 위해 높이를 지정하거나 flex 비율 사용 */
-            flex: 0 0 45%; 
+            flex: 1; /* 남은 공간 모두 차지 */
             display: flex; 
             gap: 20px;
-            /* [수정됨] 광고들을 가운데 정렬하여 비율 유지 시 빈 공간 자연스럽게 처리 */
             justify-content: center; 
+            min-height: 0; /* flex overflow 방지 */
         }
         
         .ad-wrapper {
-            /* [핵심 수정] flex: 1을 제거하고 width: auto로 변경 */
-            height: 100%; 
+            height: 100%; /* 부모 높이(커진 영역)에 꽉 채움 */
             width: auto; 
-            /* 가로:세로 = 4:5 비율 강제 */
-            aspect-ratio: 4 / 5;
+            aspect-ratio: 4 / 5; /* 4:5 비율 강제 유지 -> 높이에 맞춰 너비 자동 확대 */
             
             border-radius: var(--radius-card);
             overflow: hidden;
@@ -111,9 +111,6 @@
             position: relative;
             transition: transform 0.3s;
         }
-        /* 만약 화면이 너무 좁아서 4:5 3개가 안 들어갈 경우를 대비해 최소 크기 지정 (선택사항) */
-        .ad-wrapper { flex-shrink: 1; }
-
         .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
         .ad-img { width: 100%; height: 100%; background-size: cover; background-position: center; display: block; }
 
@@ -158,7 +155,7 @@
         .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
         
         .meal-img-box {
-            width: 100px; height: 100%;
+            width: 110px; height: 100%;
             background-color: #eee;
             background-size: cover; background-position: center;
             flex-shrink: 0; 
@@ -167,9 +164,10 @@
             padding: 0 20px;
             flex: 1;
         }
-        .meal-name { font-size: 18px; font-weight: 800; color: #495057; display: block; margin-bottom: 4px; }
+        .meal-name { font-size: 19px; font-weight: 800; color: #495057; display: block; margin-bottom: 4px; }
         .meal-desc { font-size: 13px; color: #868E96; font-weight: 500; }
         
+
         /* 유틸리티 */
         #loadingOverlay {
             display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -266,7 +264,7 @@
                         <div class="meal-img-box" style="background-image: url('https://lh6.googleusercontent.com/proxy/fg-7Jv4MQ5BhHB_TKyR5FMtR7ml9_IArZWnH7NYgJgG2JfmPIUjUOHkERnJ9hMvscTsPLoOMauUHll4ZndknzFoREYeY9ipZwjCDkDo9-sZfX8V_jnk6PIqX9KG_8GFgUZxsuoh7TA');"></div>
                         <div class="meal-info">
                             <span class="meal-name">달인보쌈</span>
-                            <span class="meal-desc">든든한 보쌈 정식</span>
+                            <span class="meal-desc">마늘 보쌈 정식(월요일 휴무)</span>
                         </div>
                     </button>
 
@@ -274,7 +272,7 @@
                         <div class="meal-img-box" style="background-image: url('https://cdn.e2news.com/news/photo/201511/85026_37781_5340.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">미스테리</span>
-                            <span class="meal-desc">떡볶이와 튀김</span>
+                            <span class="meal-desc">다양한 분식</span>
                         </div>
                     </button>
 
@@ -282,7 +280,7 @@
                         <div class="meal-img-box" style="background-image: url('https://newsimg.sedaily.com/2025/01/14/2GNOXAIO35_1.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">연김밥</span>
-                            <span class="meal-desc">신선한 재료 김밥</span>
+                            <span class="meal-desc">신선한 재료 김밥(포장 전문, 월요일 휴무)</span>
                         </div>
                     </button>
 
