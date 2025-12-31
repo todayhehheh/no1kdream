@@ -47,7 +47,6 @@
         .filter-bar label { font-size: 14px; font-weight: bold; color: #495057; }
         .filter-bar select, .filter-bar input { border: 1px solid #ced4da; padding: 8px; border-radius: 6px; outline: none; }
         .summary-box { background: #e7f5ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; font-weight: 700; color: #1864ab; }
-        /* 광고 박스 그리드: 3개 대응 */
         .ad-setting-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         @media (max-width: 800px) { .ad-setting-box { grid-template-columns: 1fr; } }
         .ad-card { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; }
@@ -305,7 +304,7 @@
             }
         };
 
-        // --- Tab 2: 정산 관리 (완전 수정됨: 결제완료지만 미정산인 것 표시) ---
+        // --- Tab 2: 정산 관리 (수정됨) ---
         window.loadSettlementData = async () => {
             showLoading(true);
             const start = document.getElementById('settleStart').value;
@@ -327,7 +326,6 @@
                     if (d.date < start || d.date > end) return;
                     if (targetStore !== 'all' && d.store_name !== targetStore) return;
                     
-                    // [중요] 'completed' 상태(식사완료)인 것만 표시
                     if (d.status !== 'completed') return;
 
                     const isSettled = d.is_settled === true;
@@ -497,6 +495,24 @@
             showLoading(false);
         };
 
+        // --- 새로고침 기능 강화 (현재 탭 인식 후 해당 로드 함수 호출) ---
+        window.refreshData = () => {
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            if (activeTabBtn) {
+                // 어떤 버튼인지 텍스트나 순서로 판단
+                const tabIndex = Array.from(document.querySelectorAll('.tab-btn')).indexOf(activeTabBtn);
+                
+                if (tabIndex === 0) loadAllUsersAndApps();
+                else if (tabIndex === 1) loadSettlementData();
+                else if (tabIndex === 2) loadRecords();
+                else if (tabIndex === 3) loadAds();
+                else if (tabIndex === 4) loadEducationStats();
+                
+                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
+                Toast.fire({ icon: 'success', title: '새로고침 완료' });
+            }
+        };
+
         // --- 기타 유틸 ---
         window.switchTab = (tabName) => {
             document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
@@ -509,10 +525,10 @@
             if(tabName==='users') loadAllUsersAndApps();
             if(tabName==='settlement') loadSettlementData();
             if(tabName==='records') loadRecords();
-            if(tabName==='ads') loadAds(); // 탭 전환시 로드
+            if(tabName==='ads') loadAds();
             if(tabName==='education') loadEducationStats(); 
         };
-        window.refreshData = () => { /* 기존 유지 */ };
+        
         window.viewPw = (pw) => Swal.fire('비밀번호', pw, 'info');
         window.changePw = async (userId) => { /* 기존 유지 */ };
         window.deleteUser = async (userId, name) => { /* 기존 유지 */ };
