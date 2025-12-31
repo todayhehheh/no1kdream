@@ -88,7 +88,7 @@
         .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
         .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
 
-        /* 왼쪽 하단: 광고 3개 (수정됨: img 태그 사용) */
+        /* 왼쪽 하단: 광고 3개 */
         .left-bottom {
             flex: 1; 
             display: flex; 
@@ -106,14 +106,13 @@
             background: #eee;
             position: relative;
             transition: transform 0.3s;
-            display: block; /* a 태그 block 처리 */
+            display: block; 
         }
         .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
         
-        /* 이미지 스타일 개선: 꽉 차게 */
         .ad-img-tag {
             width: 100%; height: 100%;
-            object-fit: cover; /* 비율 유지하며 꽉 채움 */
+            object-fit: cover; 
             display: block;
         }
 
@@ -312,7 +311,19 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- 광고 로드 (수정됨) ---
+        // --- [핵심] 구글 드라이브 링크 자동 변환 함수 ---
+        const convertToDirectLink = (url) => {
+            if (!url) return "";
+            // 구글 드라이브 공유 링크 패턴 (file/d/ID/view) 감지
+            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            if (match && match[1]) {
+                // 직접 다운로드/보기 가능한 링크로 변환
+                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+            }
+            return url; // 구글 드라이브 링크가 아니면 그대로 반환
+        };
+
+        // --- 광고 로드 ---
         const DEFAULT_ADS = {
             ad1: { image: "https://placehold.co/400x500?text=Dream+Center", link: "#" },
             ad2: { image: "https://placehold.co/400x500?text=Ad+Space+2", link: "#" },
@@ -335,8 +346,10 @@
                         const imgEl = document.getElementById(imgId);
                         const linkEl = document.getElementById(linkId);
                         
-                        if(data[imgKey] && data[imgKey].trim() !== "") {
-                            imgEl.src = data[imgKey];
+                        let rawUrl = data[imgKey];
+                        if(rawUrl && rawUrl.trim() !== "") {
+                            // 여기서 자동 변환 적용!
+                            imgEl.src = convertToDirectLink(rawUrl);
                         } else {
                             imgEl.src = def.image;
                         }
@@ -360,7 +373,7 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- 모달 로직 (기존 동일) ---
+        // --- 모달 로직 ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
