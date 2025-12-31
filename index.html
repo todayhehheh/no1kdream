@@ -441,7 +441,12 @@
                     const checkSnap = await getDocs(checkQ);
                     let isBlocked = false; checkSnap.forEach(doc => { if (doc.data().status === 'applied' || doc.data().status === 'approved') isBlocked = true; });
                     if(isBlocked) { showLoading(false); return Swal.fire('신청 불가', '이미 진행 중인 식사 신청이 있습니다.', 'warning'); }
-                    collectionName = "meal_applications"; dataPayload.store_name = targetName; dataPayload.status = "applied"; successMsg = `${userData.name}님, [${targetName}] 신청되었습니다.`;
+                    
+                    collectionName = "meal_applications"; 
+                    dataPayload.store_name = targetName; 
+                    dataPayload.status = "approved"; // [수정됨] 신청 즉시 '승인됨' 상태로 저장
+                    successMsg = `${userData.name}님, [${targetName}] 신청 승인되었습니다.`;
+                
                 } else if(type === 'snack') {
                     collectionName = "snacks"; dataPayload.item = "간식 세트"; successMsg = "맛있게 드세요!";
                 }
