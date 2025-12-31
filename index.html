@@ -1,415 +1,457 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>꿈드림 통합 관제탑</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>노원구 꿈드림 - 센터 키오스크</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .glass-container { max-width: 1200px; margin: 0 auto; padding: 30px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        h1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; color: #2d3436; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .refresh-btn { background: #fff; border: 1px solid #ddd; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 18px; }
-        .refresh-btn:hover { background: #f8f9fa; transform: rotate(180deg); }
-        .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: #f1f3f5; padding: 5px; border-radius: 12px; flex-wrap: wrap; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-weight: 700; color: #868e96; font-size: 15px; transition: 0.2s; white-space: nowrap; }
-        .tab-btn.active { background: white; color: #6C5CE7; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); }
-        .tab-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.5); }
-        .table-box { animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 14px; }
-        th { background-color: #f8f9fa; color: #495057; font-weight: 700; padding: 12px; border-bottom: 2px solid #dee2e6; text-align: center; }
-        td { padding: 12px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; color: #212529; text-align: center; }
-        tr:hover td { background-color: #f8f9fa; }
-        .btn-small { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; margin: 0 2px; transition: 0.2s; }
-        .btn-blue { background: #e7f5ff; color: #1c7ed6; } .btn-blue:hover { background: #d0ebff; }
-        .btn-red { background: #fff5f5; color: #fa5252; } .btn-red:hover { background: #ffe3e3; }
-        .btn-green { background: #ebfbee; color: #2f9e44; } .btn-green:hover { background: #d3f9d8; }
-        .btn-dark { background: #343a40; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; border:none; cursor: pointer; }
-        .btn-dark:hover { background: #212529; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-blue { background: #e7f5ff; color: #1971c2; }
-        .badge-green { background: #ebfbee; color: #2f9e44; }
-        .store-toggles { display: flex; gap: 4px; justify-content: center; }
-        .toggle-btn { padding: 6px 10px; border: 1px solid #dee2e6; background: white; color: #adb5bd; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
-        .toggle-btn:hover { background: #f8f9fa; }
-        .active-dalin { background: #fff9db; color: #f08c00; border-color: #fcc419; }
-        .active-mystery { background: #f3d9fa; color: #be4bdb; border-color: #e599f7; }
-        .active-yeon { background: #e6fcf5; color: #0ca678; border-color: #63e6be; }
-        .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 12px; }
-        .filter-bar label { font-size: 14px; font-weight: bold; color: #495057; }
-        .filter-bar select, .filter-bar input { border: 1px solid #ced4da; padding: 8px; border-radius: 6px; outline: none; }
-        .summary-box { background: #e7f5ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; font-weight: 700; color: #1864ab; }
-        .ad-setting-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .ad-card { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #495057; }
-        .input-field { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; }
-        #loadingOverlay { display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #6C5CE7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        :root {
+            --primary: #6C5CE7;
+            --bg-body: #F4F7F6;
+            --text-main: #2D3436;
+            --shadow-card: 0 10px 20px rgba(0,0,0,0.06);
+            --radius-card: 28px;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* 전체 컨테이너 */
+        .kiosk-wrapper {
+            width: 96%; height: 94vh;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(30px);
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.6);
+            padding: 30px 50px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* 1. 헤더 영역 */
+        .header {
+            flex: 0 0 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative;
+        }
+        .header-title {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            font-size: 34px; font-weight: 900; color: var(--text-main); margin: 0; letter-spacing: -1px;
+        }
+        .header-btn {
+            padding: 10px 24px; border-radius: 50px; font-size: 16px; font-weight: 700;
+            border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-tutorial { background: #FF7675; color: white; }
+        .btn-tutorial:hover { transform: scale(1.05); background: #ff5252; }
+        .btn-register { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-register:hover { transform: scale(1.05); background: var(--primary); color: white; }
+
+        /* 2. 메인 그리드 레이아웃 (좌우 분할) */
+        .main-grid {
+            flex: 1;
+            display: flex;
+            gap: 30px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* [왼쪽 컬럼] 버튼(상) + 광고(하) */
+        .left-column {
+            flex: 1.8; /* 화면의 약 65% 차지 */
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* 왼쪽 상단: 기능 버튼 2개 (높이 28%로 축소) */
+        .left-top {
+            flex: 0 0 28%; 
+            display: flex; gap: 25px;
+        }
+        .func-card {
+            flex: 1; border-radius: var(--radius-card); border: none; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 800; color: white;
+            box-shadow: var(--shadow-card); transition: transform 0.2s; gap: 10px;
+        }
+        .func-card .emoji { font-size: 48px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        .func-card:hover { transform: translateY(-5px); filter: brightness(1.05); }
+        .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
+        .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
+
+        /* 왼쪽 하단: 광고 3개 (나머지 공간 모두 차지 & 4:5 비율 유지) */
+        .left-bottom {
+            flex: 1; 
+            display: flex; 
+            gap: 20px;
+            justify-content: center; 
+            min-height: 0; 
+        }
+        
+        .ad-wrapper {
+            height: 100%; /* 부모 높이에 맞춤 */
+            width: auto; 
+            aspect-ratio: 4 / 5; /* 비율 고정 -> 너비 자동 조절 */
+            
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            background: #eee;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
+        .ad-img { width: 100%; height: 100%; background-size: cover; background-position: center; display: block; }
+
+
+        /* [오른쪽 컬럼] 급식 메뉴판 */
+        .right-column {
+            flex: 1; /* 화면의 약 35% 차지 */
+            background: white;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            padding: 30px;
+            display: flex; flex-direction: column;
+        }
+        .meal-title-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        }
+        .meal-icon-bg {
+            background: #FF7675; color: white; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .meal-title { font-size: 22px; font-weight: 800; color: var(--text-main); margin: 0; }
+
+        .meal-list {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr; 
+            grid-template-rows: repeat(4, 1fr); 
+            gap: 15px;
+        }
+        
+        .meal-card-btn {
+            background: white; border: 2px solid #F1F3F5;
+            border-radius: 20px; cursor: pointer;
+            display: flex; align-items: center; 
+            padding: 0; overflow: hidden;
+            transition: 0.2s;
+            text-align: left;
+        }
+        .meal-card-btn:hover:not(:disabled) {
+            border-color: var(--primary); box-shadow: 0 4px 15px rgba(108, 92, 231, 0.15); transform: translateX(5px);
+        }
+        .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
+        
+        .meal-img-box {
+            width: 110px; height: 100%;
+            background-color: #eee;
+            background-size: cover; background-position: center;
+            flex-shrink: 0; 
+        }
+        .meal-info {
+            padding: 0 20px;
+            flex: 1;
+        }
+        .meal-name { font-size: 19px; font-weight: 800; color: #495057; display: block; margin-bottom: 4px; }
+        .meal-desc { font-size: 13px; color: #868E96; font-weight: 500; }
+        
+
+        /* 유틸리티 */
+        #loadingOverlay {
+            display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.85); z-index: 10000;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
+            border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #hidden-print-zone { position: fixed; top: 0; left: 0; width: 210mm; min-height: 297mm; background: white; z-index: -9999; padding: 20mm; box-sizing: border-box; opacity: 0; pointer-events: none; }
+
+        #blockScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f0f2f5; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: #333;
+        }
+
+        /* SweetAlert Custom */
+        .swal-radio-group { display: flex; gap: 10px; margin: 15px 0 25px; }
+        .swal-radio-item { flex: 1; }
+        .swal-radio-item input { display: none; }
+        .swal-radio-item label { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 90px; background: #f8f9fa; border-radius: 15px; 
+            font-size: 14px; font-weight: 700; color: #636e72; cursor: pointer; 
+            border: 2px solid transparent; transition: 0.2s; 
+        }
+        .swal-radio-item label span { font-size: 28px; margin-bottom: 5px; }
+        .swal-radio-item input:checked + label { 
+            background: #ede9fe; border-color: var(--primary); color: var(--primary); 
+            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
+        }
     </style>
 </head>
-
 <body>
 
-    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="blockScreen">
+        <h1 style="font-size: 80px; margin-bottom: 20px;">🔒</h1>
+        <h2>접근이 제한된 기기입니다.</h2>
+        <p style="color:#666; font-size:18px;">센터 관리자에게 기기 등록을 요청하세요.</p>
+    </div>
 
-    <div class="glass-container">
-        <h1>
-            <div class="header-left">
-                <span>📋 꿈드림 통합 관제탑</span>
-                <button class="btn-dark" onclick="registerThisDevice()" title="이 PC를 키오스크로 인증합니다">🖥️ 기기 등록</button>
-                <button class="btn-small btn-red" onclick="unregisterThisDevice()" title="인증 해제">🚫 해제</button>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:bold; color:#555;">처리중입니다...</p>
+    </div>
+
+    <div class="kiosk-wrapper" id="mainContent" style="display:none;">
+        
+        <header class="header">
+            <button onclick="openTutorialModal()" class="header-btn btn-tutorial">▶ 급식 튜토리얼</button>
+            <h1 class="header-title">노원구 꿈드림</h1>
+            <button onclick="openRegisterModal()" class="header-btn btn-register">🆕 회원가입</button>
+        </header>
+
+        <div class="main-grid">
+            
+            <div class="left-column">
+                
+                <div class="left-top">
+                    <button class="func-card card-attendance" onclick="openCombinedModal('attendance')">
+                        <span class="emoji">📅</span>
+                        <span>출석하기</span>
+                    </button>
+                    <button class="func-card card-snack" onclick="openCombinedModal('snack')">
+                        <span class="emoji">🥪</span>
+                        <span>부식 신청</span>
+                    </button>
+                </div>
+
+                <div class="left-bottom">
+                    <div class="ad-wrapper">
+                        <a id="ad1Link" href="#" target="_blank" class="ad-img" id="ad1"></a>
+                    </div>
+                    <div class="ad-wrapper">
+                        <a id="ad2Link" href="#" target="_blank" class="ad-img" id="ad2"></a>
+                    </div>
+                    <div class="ad-wrapper">
+                        <a id="ad3Link" href="#" target="_blank" class="ad-img" id="ad3"></a>
+                    </div>
+                </div>
             </div>
-            <button class="refresh-btn" onclick="refreshData()" title="새로고침">🔄</button>
-        </h1>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('users')">1. 전체 청소년 & 급식</button>
-            <button class="tab-btn" onclick="switchTab('settlement')">2. 정산 관리</button>
-            <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록</button>
-            <button class="tab-btn" onclick="switchTab('ads')">4. 광고 설정</button>
-            <button class="tab-btn" onclick="switchTab('education')">5. 기초소양교육</button>
-        </div>
+            <div class="right-column">
+                <div class="meal-title-row">
+                    <div class="meal-icon-bg">🍚</div>
+                    <h2 class="meal-title">오늘 뭐 먹지?</h2>
+                </div>
+                
+                <div class="meal-list">
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '달인보쌈')">
+                        <div class="meal-img-box" style="background-image: url('https://lh6.googleusercontent.com/proxy/fg-7Jv4MQ5BhHB_TKyR5FMtR7ml9_IArZWnH7NYgJgG2JfmPIUjUOHkERnJ9hMvscTsPLoOMauUHll4ZndknzFoREYeY9ipZwjCDkDo9-sZfX8V_jnk6PIqX9KG_8GFgUZxsuoh7TA');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">달인보쌈</span>
+                            <span class="meal-desc">든든한 보쌈 정식</span>
+                        </div>
+                    </button>
 
-        <div id="tab-users" class="table-box">
-            <div style="margin-bottom: 10px; color:#555; font-size:14px;">📅 <strong>오늘 (<span id="todayDisplay"></span>)</strong> 기준 상태</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th width="15%">이름</th>
-                        <th width="20%">상태</th>
-                        <th width="35%">승인/변경</th>
-                        <th width="20%">계정</th>
-                        <th width="10%">관리</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody"><tr><td colspan="5">로딩 중...</td></tr></tbody>
-            </table>
-        </div>
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '미스테리분식')">
+                        <div class="meal-img-box" style="background-image: url('https://cdn.e2news.com/news/photo/201511/85026_37781_5340.jpg');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">미스테리</span>
+                            <span class="meal-desc">떡볶이와 튀김</span>
+                        </div>
+                    </button>
 
-        <div id="tab-settlement" class="table-box" style="display:none;">
-            <div class="filter-bar">
-                <label>기간:</label><input type="date" id="settleStart"> ~ <input type="date" id="settleEnd">
-                <label>업체:</label><select id="settleStore">
-                    <option value="all">전체</option>
-                    <option value="달인보쌈">달인보쌈</option>
-                    <option value="미스테리분식">미스테리분식</option>
-                    <option value="연김밥">연김밥</option>
-                </select>
-                <label>상태:</label><select id="settleStatus">
-                    <option value="all">전체</option>
-                    <option value="no">❌ 미정산</option>
-                    <option value="yes">✅ 정산완료</option>
-                </select>
-                <button class="btn-small btn-blue" onclick="loadSettlementData()">조회</button>
-                <button class="btn-small btn-green" onclick="downloadTableAsExcel('settleTable', '정산내역')">엑셀</button>
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '연김밥')">
+                        <div class="meal-img-box" style="background-image: url('https://newsimg.sedaily.com/2025/01/14/2GNOXAIO35_1.jpg');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">연김밥</span>
+                            <span class="meal-desc">신선한 재료 김밥</span>
+                        </div>
+                    </button>
+
+                    <button class="meal-card-btn" disabled>
+                        <div class="meal-img-box" style="background-color: #eee; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:24px;">🚫</div>
+                        <div class="meal-info">
+                            <span class="meal-name">준비중</span>
+                            <span class="meal-desc">Coming Soon</span>
+                        </div>
+                    </button>
+                </div>
             </div>
-            <div class="summary-box">
-                <span>총 건수: <span id="sumCount">0</span></span>
-                <span>총 매출: <span id="sumPrice">0</span></span>
-                <span style="color:#e03131">미정산(지급예정): <span id="sumUnpaid">0</span></span>
-            </div>
-            <table id="settleTable">
-                <thead><tr><th>날짜</th> <th>이름</th> <th>업체</th> <th>금액</th> <th>정산상태</th></tr></thead>
-                <tbody id="settleBody"></tbody>
-            </table>
-        </div>
 
-        <div id="tab-records" class="table-box" style="display:none;">
-            <div class="filter-bar">
-                <label>기간:</label><input type="date" id="recStart"> ~ <input type="date" id="recEnd">
-                <label>활동:</label><select id="recActivity">
-                    <option value="">전체</option>
-                    <option value="기초소양교육">기초소양</option>
-                    <option value="프로그램">프로그램</option>
-                    <option value="스터디카페">스터디</option>
-                </select>
-                <button class="btn-small btn-blue" onclick="loadRecords()">조회</button>
-                <button class="btn-small btn-green" onclick="downloadTableAsExcel('recordTable', '활동기록')">엑셀</button>
-            </div>
-            <table id="recordTable">
-                <thead><tr><th>이름</th> <th>일자</th> <th>활동내역</th></tr></thead>
-                <tbody id="recBody"></tbody>
-            </table>
-        </div>
-
-        <div id="tab-ads" class="table-box" style="display:none;">
-            <h2>📢 키오스크 광고 배너 설정</h2>
-            <div class="ad-setting-box">
-                <div class="ad-card"><h3>광고 1 (왼쪽)</h3><div class="input-group"><label>이미지 URL</label><input type="text" id="ad1Img" class="input-field"></div><div class="input-group"><label>이동 링크</label><input type="text" id="ad1Link" class="input-field"></div></div>
-                <div class="ad-card"><h3>광고 2 (오른쪽)</h3><div class="input-group"><label>이미지 URL</label><input type="text" id="ad2Img" class="input-field"></div><div class="input-group"><label>이동 링크</label><input type="text" id="ad2Link" class="input-field"></div></div>
-            </div>
-            <button class="btn-dark" style="width:100%; margin-top:20px; padding:15px;" onclick="saveAds()">설정 저장</button>
-        </div>
-
-        <div id="tab-education" class="table-box" style="display:none;">
-            <div class="filter-bar">
-                <label>이름 검색:</label><input type="text" id="eduSearchName" placeholder="예: 홍길동">
-                <button class="btn-small btn-blue" onclick="loadEducationStats()">조회</button>
-                <button class="btn-small btn-green" onclick="downloadTableAsExcel('eduTable', '기초소양교육_이수대장')">엑셀</button>
-            </div>
-            <table id="eduTable">
-                <thead><tr><th>수강일자</th> <th>이름</th> <th>생년월일</th> <th>수강과목</th> <th>강의명</th></tr></thead>
-                <tbody id="eduBody"><tr><td colspan="5">조회 버튼을 눌러주세요.</td></tr></tbody>
-            </table>
         </div>
     </div>
 
     <script type="module">
-        import { db, collection, getDocs, getDoc, setDoc, query, where, orderBy, updateDoc, addDoc, deleteDoc, doc, Timestamp } from "./js/firebase-config.js";
+        import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
-        const ADMIN_PW = "1388";
-        const showLoading = (show) => { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
         const getTodayStr = () => {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         };
 
-        window.onload = async () => {
-            const { value: inputPw } = await Swal.fire({
-                title: '관리자 접속', input: 'password', inputPlaceholder: '비밀번호를 입력하세요',
-                allowOutsideClick: false, confirmButtonText: '접속'
+        const showLoading = (show) => {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        };
+
+        // --- 광고 로드 ---
+        const DEFAULT_ADS = {
+            ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=AD+1", link: "#" },
+            ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=AD+2", link: "#" },
+            ad3: { image: "https://via.placeholder.com/400x500/ccc/888?text=AD+3", link: "#" }
+        };
+
+        const applyDefaultAds = () => {
+            document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
+            document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
+            document.getElementById('ad3').style.backgroundImage = `url('${DEFAULT_ADS.ad3.image}')`;
+        };
+
+        const loadAds = async () => {
+            try {
+                const docRef = doc(db, "settings", "ads");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const setAd = (id, linkId, imgKey, linkKey, def) => {
+                        const el = document.getElementById(id);
+                        const linkEl = document.getElementById(linkId);
+                        if(data[imgKey]) el.style.backgroundImage = `url('${data[imgKey]}')`;
+                        else el.style.backgroundImage = `url('${def.image}')`;
+                        if(data[linkKey]) linkEl.href = data[linkKey];
+                    };
+                    setAd('ad1', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
+                    setAd('ad2', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
+                    setAd('ad3', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
+                } else applyDefaultAds();
+            } catch(e) { applyDefaultAds(); }
+        };
+
+        // --- 기기 인증 ---
+        const checkDeviceAuth = () => {
+            const isAuthorized = localStorage.getItem('kiosk_auth_token') === 'dream_center_pc';
+            if (isAuthorized) {
+                document.getElementById('blockScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'flex';
+                loadAds();
+            } else { console.log("미인증 기기"); }
+        };
+
+        // --- 모달 로직 ---
+        window.openTutorialModal = () => {
+            Swal.fire({
+                title: '<strong>급식 튜토리얼</strong>',
+                html: `<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius:15px;">
+                        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                        src="https://www.youtube.com/embed/IWwxdhD54uU?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>`,
+                showCloseButton: true, showConfirmButton: false, width: 700, padding: '20px'
             });
-            if (inputPw !== ADMIN_PW) {
-                document.body.innerHTML = "<div style='text-align:center;margin-top:20%;color:red;'><h2>⛔ 접근 권한이 없습니다.</h2><button onclick='location.reload()'>다시 시도</button></div>";
-                return;
-            }
-            const todayStr = getTodayStr();
-            const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
-            document.getElementById('todayDisplay').innerText = todayStr;
-            document.getElementById('settleStart').value = monthAgo.toISOString().split('T')[0];
-            document.getElementById('settleEnd').value = todayStr;
-            document.getElementById('recStart').value = monthAgo.toISOString().split('T')[0];
-            document.getElementById('recEnd').value = todayStr;
-            loadAllUsersAndApps();
         };
 
-        // --- Tab 1: 회원 및 급식 관리 ---
-        window.loadAllUsersAndApps = async () => {
-            showLoading(true);
-            const today = getTodayStr();
-            const tbody = document.getElementById('userTableBody');
-            
-            try {
-                const userSnap = await getDocs(query(collection(db, "users"), orderBy("name")));
-                const appSnap = await getDocs(query(collection(db, "meal_applications"), where("date", "==", today)));
+        window.openRegisterModal = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: '회원가입',
+                html: '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)">' +
+                      '<input id="swal-birth" class="swal2-input" type="tel" maxlength="6" placeholder="생년월일 (예: 080101)">' +
+                      '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정">' +
+                      '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
+                focusConfirm: false, showCancelButton: true, confirmButtonText: '가입하기',
+                preConfirm: () => [
+                    document.getElementById('swal-name').value,
+                    document.getElementById('swal-birth').value,
+                    document.getElementById('swal-pw').value,
+                    document.getElementById('swal-pw2').value
+                ]
+            });
 
-                let appsMap = {};
-                appSnap.forEach(doc => {
-                    const d = doc.data();
-                    if (!appsMap[d.student_id]) appsMap[d.student_id] = [];
-                    // timestamp 기준 내림차순 정렬을 위해 저장
-                    appsMap[d.student_id].push({ docId: doc.id, ...d, ts: d.timestamp ? d.timestamp.toMillis() : 0 });
-                });
-
-                tbody.innerHTML = "";
-                if (userSnap.empty) { tbody.innerHTML = "<tr><td colspan='5'>회원 없음</td></tr>"; showLoading(false); return; }
-
-                userSnap.forEach(userDoc => {
-                    const u = userDoc.data();
-                    const userId = userDoc.id;
-                    let studentApps = appsMap[userId] || [];
-                    
-                    studentApps.sort((a,b) => b.ts - a.ts);
-                    let activeApp = studentApps.find(app => app.status === 'applied' || app.status === 'approved');
-                    let completedCount = studentApps.filter(app => app.status === 'completed').length;
-
-                    let statusText = `<span style="color:#ccc;">-</span>`;
-                    let buttonsHtml = '';
-
-                    if (activeApp) {
-                        const store = activeApp.store_name;
-                        const status = activeApp.status;
-                        const appId = activeApp.docId;
-
-                        if (status === 'applied') statusText = `<span class="badge badge-blue">${store} (신청)</span>`;
-                        else statusText = `<span class="badge badge-green" style="background:#fff9db; color:#f08c00;">${store} (승인)</span>`;
-
-                        const cD = store === '달인보쌈' ? 'active-dalin' : '';
-                        const cM = store === '미스테리분식' ? 'active-mystery' : '';
-                        const cY = store === '연김밥' ? 'active-yeon' : '';
-
-                        buttonsHtml = `<div class="store-toggles">
-                            <button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn ${cM}" onclick="changeStore('${appId}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button>
-                        </div>`;
-                    } else {
-                        // 미신청 상태 -> 강제 승인 버튼
-                        buttonsHtml = `<div class="store-toggles">
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button>
-                        </div>`;
-                        if(completedCount > 0) statusText = `<span class="badge badge-green">완료 (${completedCount})</span>`;
-                    }
-
-                    tbody.innerHTML += `<tr>
-                        <td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td>
-                        <td>${statusText}</td>
-                        <td>${buttonsHtml}</td>
-                        <td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td>
-                        <td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td>
-                    </tr>`;
-                });
-            } catch(e) { console.error(e); }
-            showLoading(false);
-        };
-
-        window.changeStore = async (docId, newStore) => {
-            showLoading(true);
-            try {
-                // 상점만 변경 (activity 필드는 건드리지 않음 -> 학생의 원래 활동 기록 보존)
-                await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" });
-                loadAllUsersAndApps();
-            } catch(e) { console.error(e); Swal.fire("오류", "변경 실패", "error"); }
-            showLoading(false);
-        };
-
-        window.forceApprove = async (userId, userName, storeName) => {
-            if(confirm(`${userName}님에게 [${storeName}] 식사권을 발급하시겠습니까?`)) {
-                await addDoc(collection(db, "meal_applications"), {
-                    student_id: userId, student_name: userName, store_name: storeName,
-                    status: "approved", date: getTodayStr(), 
-                    activity: "관리자승인", // [중요] 관리자가 만든 건은 '관리자승인'으로 표시 -> Tab 3에서 필터링됨
-                    timestamp: Timestamp.now(), is_settled: false
-                });
-                loadAllUsersAndApps();
+            if (formValues) {
+                const [name, birth, pw, pw2] = formValues;
+                if(!name || birth.length !== 6 || !pw) return Swal.fire('오류', '모든 정보를 입력해주세요.', 'error');
+                if(pw !== pw2) return Swal.fire('오류', '비밀번호가 일치하지 않습니다.', 'error');
+                showLoading(true);
+                try {
+                    const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth));
+                    const snap = await getDocs(q);
+                    if(!snap.empty) { showLoading(false); return Swal.fire('오류', '이미 가입된 회원입니다.', 'warning'); }
+                    await addDoc(collection(db, "users"), { name, birth, password: pw, role: 'student', createdAt: Timestamp.now() });
+                    showLoading(false); Swal.fire('성공', '회원가입이 완료되었습니다!', 'success');
+                } catch(e) { showLoading(false); Swal.fire('오류', '시스템 오류', 'error'); }
             }
         };
 
-        // --- Tab 2: 정산 관리 (수정됨: Completed만 표시) ---
-        window.loadSettlementData = async () => {
-            showLoading(true);
-            const start = document.getElementById('settleStart').value;
-            const end = document.getElementById('settleEnd').value;
-            const targetStore = document.getElementById('settleStore').value;
-            const targetStatus = document.getElementById('settleStatus').value;
-            const tbody = document.getElementById('settleBody');
+        window.openCombinedModal = async (type, targetName = "") => {
+            let titleText = type === 'attendance' ? "출석 체크" : (type === 'meal' ? `[${targetName}] 식사 신청` : "부식 신청");
+            const activityHtml = `
+                <div style="text-align:center; font-size:15px; margin-bottom:10px; color:#666; font-weight:bold;">✨ 오늘의 활동을 선택해주세요</div>
+                <div class="swal-radio-group">
+                    <div class="swal-radio-item"><input type="radio" id="act1" name="activity" value="기초소양교육" checked><label for="act1"><span>📚</span>기초소양</label></div>
+                    <div class="swal-radio-item"><input type="radio" id="act2" name="activity" value="프로그램"><label for="act2"><span>🎨</span>프로그램</label></div>
+                    <div class="swal-radio-item"><input type="radio" id="act3" name="activity" value="스터디카페"><label for="act3"><span>✏️</span>스터디</label></div>
+                </div>`;
+
+            const { value: result } = await Swal.fire({
+                title: titleText,
+                html: activityHtml +
+                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)">' +
+                      '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
+                showCancelButton: true, confirmButtonText: '신청 완료', width: 600,
+                preConfirm: () => {
+                    const actInput = document.querySelector('input[name="activity"]:checked');
+                    return { activity: actInput ? actInput.value : "기초소양교육", id: document.getElementById('loginId').value, pw: document.getElementById('loginPw').value }
+                }
+            });
+
+            if (result) processApplication(type, targetName, result.activity, result.id, result.pw);
+        };
+
+        const processApplication = async (type, targetName, activity, rawId, pw) => {
+            const cleanId = rawId.replace(/\s/g, '');
+            const idMatch = cleanId.match(/^([가-힣a-zA-Z]+)(\d{6})$/);
+            if(!idMatch) return Swal.fire('오류', '아이디는 이름+생년월일6자리 입니다.', 'warning');
             
-            try {
-                const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
-                let list = [], totalCnt=0, totalPrice=0, totalUnpaid=0;
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    if (d.date < start || d.date > end) return;
-                    if (targetStore !== 'all' && d.store_name !== targetStore) return;
-                    
-                    // [중요] 'completed' 상태(식사완료)인 것만 정산 리스트에 표시
-                    if (d.status !== 'completed') return;
-
-                    const isSettled = d.is_settled === true;
-                    if (targetStatus === 'no' && isSettled) return;
-                    if (targetStatus === 'yes' && !isSettled) return;
-
-                    const price = d.amount ? Number(d.amount) : 0;
-                    totalCnt++; 
-                    totalPrice += price;
-                    if(!isSettled) totalUnpaid += price;
-                    
-                    list.push({ id: doc.id, ...d, price, isSettled });
-                });
-
-                document.getElementById('sumCount').innerText = totalCnt + "건";
-                document.getElementById('sumPrice').innerText = totalPrice.toLocaleString() + "원";
-                document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString() + "원";
-
-                tbody.innerHTML = list.length ? "" : "<tr><td colspan='5'>내역 없음</td></tr>";
-                list.forEach(item => {
-                    const btn = item.isSettled ? 
-                        `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">✅ 정산완료</button>` : 
-                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">❌ 미정산</button>`; // 기본 미정산
-                    
-                    tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.store_name}</td><td>${item.price.toLocaleString()}</td><td>${btn}</td></tr>`;
-                });
-            } catch(e) { console.error(e); }
-            showLoading(false);
-        };
-
-        window.toggleSettle = async (id, state) => {
-            if(confirm("정산 상태를 변경하시겠습니까?")) {
-                await updateDoc(doc(db, "meal_applications", id), { is_settled: state });
-                loadSettlementData();
-            }
-        };
-
-        // --- Tab 3: 통합 기록 (수정됨) ---
-        window.loadRecords = async () => {
+            const name = idMatch[1]; const birth = idMatch[2];
             showLoading(true);
-            const start = document.getElementById('recStart').value;
-            const end = document.getElementById('recEnd').value;
-            const filterAct = document.getElementById('recActivity').value;
-            const tbody = document.getElementById('recBody');
-            
+
             try {
-                let records = [];
-                const add = (snap, type) => snap.forEach(d => {
-                    const data = d.data();
-                    if(data.date >= start && data.date <= end) {
-                        let actName = data.activity || (type==='meal' ? '식사' : '간식');
-                        
-                        // [중요] 관리자 승인 건은 기록에서 제외
-                        if(actName.includes('관리자')) return; 
+                const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
+                const snapshot = await getDocs(q);
+                if(snapshot.empty) { showLoading(false); return Swal.fire('인증 실패', '회원정보가 일치하지 않습니다.', 'error'); }
 
-                        // [수정] 급식인 경우 가게이름 표시 안함. 그냥 원래 활동내용(기초소양 등) 표시
-                        // 만약 활동 내용이 없는 단순 식사라면 '식사'라고 표시됨.
-                        
-                        if(filterAct && actName !== filterAct) return;
-                        records.push({ date: data.date, name: data.student_name, act: actName });
-                    }
-                });
+                const userDoc = snapshot.docs[0]; const userId = userDoc.id; const userData = userDoc.data(); const today = getTodayStr();
+                let collectionName = "", dataPayload = { student_id: userId, student_name: userData.name, activity: activity, date: today, timestamp: Timestamp.now() }, successMsg = "";
 
-                const [attSnap, mealSnap, snackSnap] = await Promise.all([
-                    getDocs(query(collection(db, "attendance"))),
-                    getDocs(query(collection(db, "meal_applications"))),
-                    getDocs(query(collection(db, "snacks")))
-                ]);
+                if(type === 'attendance') {
+                    collectionName = "attendance"; successMsg = `${userData.name}님, [${activity}] 출석되셨습니다!`;
+                } else if(type === 'meal') {
+                    const checkQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
+                    const checkSnap = await getDocs(checkQ);
+                    let isBlocked = false; checkSnap.forEach(doc => { if (doc.data().status === 'applied' || doc.data().status === 'approved') isBlocked = true; });
+                    if(isBlocked) { showLoading(false); return Swal.fire('신청 불가', '이미 진행 중인 식사 신청이 있습니다.', 'warning'); }
+                    collectionName = "meal_applications"; dataPayload.store_name = targetName; dataPayload.status = "applied"; successMsg = `${userData.name}님, [${targetName}] 신청되었습니다.`;
+                } else if(type === 'snack') {
+                    collectionName = "snacks"; dataPayload.item = "간식 세트"; successMsg = "맛있게 드세요!";
+                }
 
-                add(attSnap, 'attendance'); add(mealSnap, 'meal'); add(snackSnap, 'snack');
-                records.sort((a,b) => b.date.localeCompare(a.date));
-
-                tbody.innerHTML = records.length ? "" : "<tr><td colspan='3'>기록 없음</td></tr>";
-                records.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.act}</td></tr>`);
-            } catch(e) { console.error(e); }
-            showLoading(false);
+                await addDoc(collection(db, collectionName), dataPayload);
+                showLoading(false); Swal.fire('성공', successMsg, 'success');
+            } catch(e) { showLoading(false); Swal.fire('시스템 오류', '오류가 발생했습니다.', 'error'); }
         };
 
-        // --- Tab 4, 5 및 기타 유틸 ---
-        window.loadAds = async () => { /* 기존 코드 유지 */ };
-        window.saveAds = async () => { /* 기존 코드 유지 */ };
-        window.loadEducationStats = async () => { /* 기존 코드 유지 */ };
-        window.switchTab = (tabName) => {
-            document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).style.display = 'block';
-            // 버튼 활성화
-            const idx = ['users','settlement','records','ads','education'].indexOf(tabName);
-            if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
-            if(tabName==='users') loadAllUsersAndApps();
-            if(tabName==='settlement') loadSettlementData(); // 탭 전환시 로드
-            if(tabName==='records') loadRecords(); // 탭 전환시 로드
-        };
-        window.refreshData = () => { /* 기존 유지 */ };
-        window.viewPw = (pw) => Swal.fire('비밀번호', pw, 'info');
-        window.changePw = async (userId) => { /* 기존 유지 */ };
-        window.deleteUser = async (userId, name) => { /* 기존 유지 */ };
-        window.registerThisDevice = () => { /* 기존 유지 */ };
-        window.unregisterThisDevice = () => { /* 기존 유지 */ };
-        window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
-        window.generateSettlementPDF = () => { alert("기능 준비중"); };
-        window.generateRecordPDF = () => { alert("기능 준비중"); };
-
+        checkDeviceAuth();
     </script>
 </body>
 </html>
