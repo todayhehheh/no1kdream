@@ -57,7 +57,6 @@
         #loadingOverlay { display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #6C5CE7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         /* PDF 출력용 숨김 영역 */
         #hidden-print-zone { 
             position: fixed; top: 0; left: 0; width: 210mm; min-height: 297mm; 
@@ -215,7 +214,6 @@
             const monthAgoStr = monthAgo.toISOString().split('T')[0];
 
             document.getElementById('todayDisplay').innerText = todayStr;
-            // 날짜 초기화 (모든 탭)
             ['settle', 'rec', 'edu'].forEach(prefix => {
                 document.getElementById(`${prefix}Start`).value = monthAgoStr;
                 document.getElementById(`${prefix}End`).value = todayStr;
@@ -433,11 +431,85 @@
             showLoading(false);
         };
 
-        // --- Tab 4, 5 및 기타 유틸 ---
-        window.loadAds = async () => { /* 기존 코드 유지 */ };
-        window.saveAds = async () => { /* 기존 코드 유지 */ };
-        window.loadEducationStats = async () => { /* 기존 코드 유지 */ };
-        
+        // --- Tab 4: 광고 설정 ---
+        window.loadAds = async () => {
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "ads"));
+                if(docSnap.exists()) {
+                    const d = docSnap.data();
+                    document.getElementById('ad1Img').value = d.ad1_img || "";
+                    document.getElementById('ad1Link').value = d.ad1_link || "";
+                    document.getElementById('ad2Img').value = d.ad2_img || "";
+                    document.getElementById('ad2Link').value = d.ad2_link || "";
+                    document.getElementById('ad3Img').value = d.ad3_img || "";
+                    document.getElementById('ad3Link').value = d.ad3_link || "";
+                }
+            } catch(e) {}
+        };
+
+        window.saveAds = async () => {
+            const data = {
+                ad1_img: document.getElementById('ad1Img').value,
+                ad1_link: document.getElementById('ad1Link').value,
+                ad2_img: document.getElementById('ad2Img').value,
+                ad2_link: document.getElementById('ad2Link').value,
+                ad3_img: document.getElementById('ad3Img').value,
+                ad3_link: document.getElementById('ad3Link').value
+            };
+            await setDoc(doc(db, "settings", "ads"), data);
+            Swal.fire("저장 완료", "키오스크에 즉시 반영됩니다.", "success");
+        };
+
+        // --- Tab 5: 기초소양교육 (오류 해결됨: 클라이언트 정렬) ---
+        window.loadEducationStats = async () => {
+            showLoading(true);
+            const tbody = document.getElementById('eduBody');
+            const searchName = document.getElementById('eduSearchName').value.trim();
+            const start = document.getElementById('eduStart').value;
+            const end = document.getElementById('eduEnd').value;
+            
+            try {
+                // 1. 순수 컬렉션 가져오기 (orderBy 제거하여 색인 에러 방지)
+                const q = query(collection(db, "education_records"));
+                const querySnapshot = await getDocs(q);
+                let records = [];
+                
+                querySnapshot.forEach(doc => {
+                    const d = doc.data();
+                    // 2. JS에서 날짜 필터링
+                    if (d.date < start || d.date > end) return;
+                    // 3. JS에서 이름 필터링
+                    if (searchName && !d.student_name.includes(searchName)) return;
+                    
+                    // 정렬을 위한 타임스탬프 확보
+                    const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
+                    records.push({ ...d, ts: ts });
+                });
+
+                // 4. JS에서 시간순 정렬 (최신순)
+                records.sort((a, b) => b.ts - a.ts);
+
+                tbody.innerHTML = "";
+                if (records.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>";
+                } else {
+                    records.forEach(d => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${d.date}</td>
+                                <td>${d.student_name}</td>
+                                <td>${d.student_birth || '-'}</td>
+                                <td><span class="badge badge-blue">${d.category}</span></td>
+                                <td style="text-align:left; padding-left:15px;">${d.video_title}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; }
+            showLoading(false);
+        };
+
+        // --- 기타 유틸 ---
         window.switchTab = (tabName) => {
             document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -449,7 +521,7 @@
             if(tabName==='users') loadAllUsersAndApps();
             if(tabName==='settlement') loadSettlementData();
             if(tabName==='records') loadRecords();
-            if(tabName==='ads') loadAds();
+            if(tabName==='ads') loadAds(); 
             if(tabName==='education') loadEducationStats(); 
         };
         
@@ -474,7 +546,7 @@
         window.unregisterThisDevice = () => { /* 기존 유지 */ };
         window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
 
-        // [복구됨] 정산 내역 PDF 생성 기능
+        // [복구됨] 정산 내역 PDF 생성
         window.generateSettlementPDF = () => {
             const zone = document.getElementById('hidden-print-zone');
             const start = document.getElementById('settleStart').value;
@@ -486,15 +558,13 @@
             const price = document.getElementById('sumPrice').innerText;
             const unpaid = document.getElementById('sumUnpaid').innerText;
 
-            // 테이블 복제 후 버튼 제거 (출력용 깔끔하게)
             const originalTable = document.getElementById('settleTable').cloneNode(true);
             originalTable.className = "report-table";
             originalTable.querySelectorAll('tr').forEach(row => {
                 const cells = row.querySelectorAll('th, td');
-                if (cells.length > 0) cells[cells.length - 1].remove(); // 마지막 열(버튼) 삭제
+                if (cells.length > 0) cells[cells.length - 1].remove(); 
             });
 
-            // 보고서 HTML 구성
             zone.innerHTML = `
                 <div class="report-header">
                     <h1 class="report-title">급식 정산 내역서</h1>
@@ -503,16 +573,14 @@
                 <div class="report-summary-box">
                     <div>총 건수: ${count}</div>
                     <div>총 매출: ${price}</div>
-                    <div style="color:#c62828">미지급액(미정산): ${unpaid}</div>
+                    <div style="color:#c62828">미정산(지급예정): ${unpaid}</div>
                 </div>
             `;
             zone.appendChild(originalTable);
-
-            // PDF 변환 실행
             downloadPDFFromElement(zone, `정산내역서_${start}`);
         };
 
-        // [복구됨] 활동 기록 PDF 생성 기능
+        // [복구됨] 활동 기록 PDF 생성
         window.generateRecordPDF = () => {
             const zone = document.getElementById('hidden-print-zone');
             const start = document.getElementById('recStart').value;
@@ -529,11 +597,10 @@
             downloadPDFFromElement(zone, `활동기록부_${start}`);
         };
 
-        // PDF 변환 유틸리티 (html2canvas + jspdf)
+        // PDF 변환 유틸리티
         function downloadPDFFromElement(element, fileName) {
             showLoading(true);
-            element.style.opacity = 1; // 캡처를 위해 잠시 보이기
-            
+            element.style.opacity = 1; 
             setTimeout(() => {
                 html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
@@ -541,7 +608,6 @@
                     const imgWidth = 210; 
                     const pageHeight = 297;
                     const imgHeight = (canvas.height * imgWidth / canvas.width) || 20;
-                    
                     let heightLeft = imgHeight; 
                     let position = 0;
 
@@ -554,18 +620,12 @@
                         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); 
                         heightLeft -= pageHeight; 
                     }
-                    
                     pdf.save(fileName + ".pdf"); 
                     element.innerHTML = "";
                     element.style.opacity = 0;
                     showLoading(false);
-                }).catch(err => { 
-                    console.error(err); 
-                    alert("PDF 생성 중 오류 발생"); 
-                    element.style.opacity = 0;
-                    showLoading(false);
-                });
-            }, 500); // 렌더링 대기 시간
+                }).catch(err => { console.error(err); alert("PDF 생성 오류"); element.style.opacity = 0; showLoading(false); });
+            }, 500);
         }
 
     </script>
