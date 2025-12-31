@@ -311,16 +311,17 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- [핵심] 구글 드라이브 링크 자동 변환 함수 ---
+        // --- [핵심 수정] 구글 드라이브 링크 자동 변환 (thumbnail 방식) ---
         const convertToDirectLink = (url) => {
             if (!url) return "";
             // 구글 드라이브 공유 링크 패턴 (file/d/ID/view) 감지
             const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
             if (match && match[1]) {
-                // 직접 다운로드/보기 가능한 링크로 변환
-                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+                // [중요] 'thumbnail' 주소로 변환 (CORS 우회에 강력함)
+                // sz=w1000 은 가로 1000px 고화질 요청
+                return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
             }
-            return url; // 구글 드라이브 링크가 아니면 그대로 반환
+            return url;
         };
 
         // --- 광고 로드 ---
@@ -348,7 +349,7 @@
                         
                         let rawUrl = data[imgKey];
                         if(rawUrl && rawUrl.trim() !== "") {
-                            // 여기서 자동 변환 적용!
+                            // 자동 변환 적용!
                             imgEl.src = convertToDirectLink(rawUrl);
                         } else {
                             imgEl.src = def.image;
