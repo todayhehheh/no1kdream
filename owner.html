@@ -13,11 +13,15 @@
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .store-badge { display:block; width:fit-content; margin:0 auto 30px; background:#e3f2fd; color:#1565c0; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:14px; }
         
+        /* 요약 카드 스타일 변경 (미정산 강조) */
         .summary-card {
-            background: #e3f2fd; color: #1565c0; padding: 20px; border-radius: 15px;
-            margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 18px;
-            display: flex; justify-content: space-around;
+            background: #fff5f5; border: 2px solid #ffc9c9; color: #c92a2a; 
+            padding: 25px; border-radius: 15px;
+            margin-bottom: 20px; text-align: center; 
+            box-shadow: 0 4px 10px rgba(255, 0, 0, 0.05);
         }
+        .summary-label { font-size: 16px; font-weight: bold; margin-bottom: 5px; opacity: 0.8; }
+        .summary-amount { font-size: 32px; font-weight: 900; }
 
         .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
         input[type="date"] { padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
@@ -30,6 +34,10 @@
         
         .empty-msg { text-align: center; color: #868e96; padding: 30px; }
         .row-item:hover { background-color: #f8f9fa; }
+
+        /* 상태 뱃지 */
+        .badge-unpaid { background: #ffe3e3; color: #fa5252; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
+        .badge-paid { background: #d3f9d8; color: #2b8a3e; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -39,8 +47,9 @@
         <div id="storeNameBadge" class="store-badge">가게 확인 중...</div>
 
         <div class="summary-card">
-            <div>총 <span id="totalCount">0</span>건</div>
-            <div>합계 <span id="totalAmount">0</span>원</div>
+            <div class="summary-label">📢 센터에서 받으실 금액 (미정산)</div>
+            <div class="summary-amount"><span id="unpaidAmount">0</span>원</div>
+            <div style="font-size:13px; margin-top:5px; color:#666;">(조회 기간 내 <span id="unpaidCount">0</span>건)</div>
         </div>
 
         <div class="filter-bar">
@@ -56,7 +65,7 @@
                     <th>날짜</th>
                     <th>학생 이름</th>
                     <th>금액</th>
-                    <th>상태</th>
+                    <th>정산 상태</th>
                 </tr>
             </thead>
             <tbody id="listBody">
@@ -68,34 +77,25 @@
     <script type="module">
         import { db, collection, getDocs, query, where } from "./js/firebase-config.js";
 
-        // [핵심] 1. URL 파라미터에서 가게 이름 가져오기 (?store=달인보쌈)
+        // URL 파라미터 체크
         const urlParams = new URLSearchParams(window.location.search);
         let myStore = urlParams.get('store'); 
-
-        // 만약 URL에 없으면 로컬스토리지 확인, 그래도 없으면 팝업
         if (!myStore) myStore = localStorage.getItem('my_store_name');
 
         window.onload = async () => {
-            // 가게 정보가 아예 없으면 선택 팝업 띄우기
             if (!myStore) {
                 const { value: store } = await Swal.fire({
                     title: '가게를 선택해주세요',
                     input: 'select',
-                    inputOptions: {
-                        '달인보쌈': '달인보쌈',
-                        '미스테리분식': '미스테리분식',
-                        '연김밥': '연김밥'
-                    },
+                    inputOptions: { '달인보쌈': '달인보쌈', '미스테리분식': '미스테리분식', '연김밥': '연김밥' },
                     inputPlaceholder: '가게 선택',
-                    showCancelButton: false,
-                    allowOutsideClick: false
+                    showCancelButton: false, allowOutsideClick: false
                 });
                 if (store) {
                     myStore = store;
                     localStorage.setItem('my_store_name', store);
                 }
             }
-            
             document.getElementById('storeNameBadge').innerText = myStore;
             
             // 날짜 초기화 (이번 달 1일 ~ 오늘)
@@ -117,32 +117,38 @@
             tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">로딩 중...</td></tr>';
 
             try {
-                // [수정된 로직] orderBy를 제거하여 색인 오류 방지 -> JS에서 정렬
                 const q = query(collection(db, "meal_applications"), 
                     where("store_name", "==", myStore),
-                    where("status", "==", "completed") // 결제 완료된 것만
+                    where("status", "==", "completed") // 학생이 식사 완료한 것만
                 );
 
                 const snapshot = await getDocs(q);
                 let list = [];
-                let sum = 0;
+                let unpaidSum = 0; // 미정산 합계
+                let unpaidCnt = 0; // 미정산 건수
 
                 snapshot.forEach(doc => {
                     const d = doc.data();
-                    // 날짜 필터 (클라이언트 사이드)
                     if (d.date >= start && d.date <= end) {
-                        // 정렬을 위한 timestamp 값 (없으면 날짜 문자열로 대체)
                         const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
-                        list.push({ ...d, ts: ts });
-                        sum += (d.amount || 0);
+                        const isUnpaid = (d.is_settled !== true); // true가 아니면 미정산
+                        
+                        list.push({ ...d, ts: ts, isUnpaid: isUnpaid });
+
+                        // 미정산 금액만 합산
+                        if (isUnpaid) {
+                            unpaidSum += (d.amount || 0);
+                            unpaidCnt++;
+                        }
                     }
                 });
 
-                // [핵심] 여기서 최신순(내림차순) 정렬 수행
+                // 최신순 정렬
                 list.sort((a, b) => b.ts - a.ts);
 
-                document.getElementById('totalCount').innerText = list.length + "건";
-                document.getElementById('totalAmount').innerText = sum.toLocaleString();
+                // 상단 요약 업데이트 (미정산 금액만)
+                document.getElementById('unpaidAmount').innerText = unpaidSum.toLocaleString();
+                document.getElementById('unpaidCount').innerText = unpaidCnt;
 
                 if (list.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">조회된 내역이 없습니다.</td></tr>';
@@ -151,19 +157,27 @@
 
                 tbody.innerHTML = "";
                 list.forEach(item => {
+                    // 상태에 따른 뱃지 표시
+                    const statusBadge = item.isUnpaid ? 
+                        `<span class="badge-unpaid">미정산</span>` : 
+                        `<span class="badge-paid">정산완료</span>`;
+
+                    // 정산완료된 건은 금액을 흐리게 표시 (선택사항)
+                    const amountStyle = item.isUnpaid ? "font-weight:bold; color:#c92a2a;" : "color:#adb5bd; text-decoration:line-through;";
+
                     tbody.innerHTML += `
                         <tr class="row-item">
                             <td>${item.date}</td>
                             <td>${item.student_name}</td>
-                            <td style="font-weight:bold; color:#212529;">${item.amount.toLocaleString()}원</td>
-                            <td><span style="color:#2f9e44; font-weight:bold;">결제완료</span></td>
+                            <td style="${amountStyle}">${item.amount.toLocaleString()}원</td>
+                            <td>${statusBadge}</td>
                         </tr>
                     `;
                 });
 
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg" style="color:red;">데이터 불러오기 실패<br><small>' + e.message + '</small></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg" style="color:red;">오류 발생</td></tr>';
             }
         };
     </script>
