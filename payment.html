@@ -133,7 +133,7 @@
         <button class="btn" style="background:#f1f3f5; color:#555; margin-top:20px;" onclick="location.reload()">돌아가기</button>
     </div>
 
- <script type="module">
+<script type="module">
         import { db, collection, query, where, getDocs, updateDoc, doc, Timestamp } from "./js/firebase-config.js";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -147,10 +147,7 @@
 
         const getTodayStr = () => {
             const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         };
 
         const showLoading = (show) => {
@@ -193,7 +190,6 @@
 
                 if (appSnap.empty) {
                     showLoading(false);
-                    // 신청은 했으나 아직 승인 안 된 경우인지 확인
                     const pendingQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
                     const pendingSnap = await getDocs(pendingQ);
                     
@@ -204,10 +200,11 @@
                 const appDoc = appSnap.docs[0];
                 const appData = appDoc.data();
 
-                // 3. 중복 사용 및 식당 일치 확인
-                if (appData.is_settled) {
+                // 3. 중복 사용 체크 (이미 식사완료/정산완료 여부 확인)
+                // is_settled가 아니라 status가 completed인지 확인해야 함 (정산은 나중에 하니까)
+                if (appData.status === 'completed') {
                     showLoading(false);
-                    return Swal.fire('이미 완료', '이미 사용된 식권입니다.', 'info');
+                    return Swal.fire('이미 사용', '이미 사용 처리된 식권입니다.', 'info');
                 }
 
                 if (appData.store_name !== storeName) {
@@ -254,11 +251,12 @@
             showLoading(true);
 
             try {
+                // [핵심 수정] is_settled: false로 저장 (선생님이 나중에 정산하기 위해)
                 await updateDoc(doc(db, "meal_applications", applicationDocId), {
                     amount: numAmount,
-                    is_settled: true,
-                    status: 'completed',
-                    settled_at: Timestamp.now()
+                    status: 'completed',    // 식사는 완료됨
+                    is_settled: false,      // 돈은 아직 정산 안 됨 (관리자 페이지에 빨간색으로 뜸)
+                    used_at: Timestamp.now()
                 });
 
                 showLoading(false);
@@ -282,4 +280,5 @@
     </script>
 </body>
 </html>
+
 
