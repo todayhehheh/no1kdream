@@ -86,7 +86,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="15%">이름</th>
+                        <th width="15%">이름 (생일)</th>
                         <th width="20%">상태</th>
                         <th width="35%">승인/변경</th>
                         <th width="20%">계정</th>
@@ -120,7 +120,7 @@
                 <span style="color:#e03131">미정산(지급예정): <span id="sumUnpaid">0</span></span>
             </div>
             <table id="settleTable">
-                <thead><tr><th>날짜</th> <th>이름</th> <th>업체</th> <th>금액</th> <th>정산상태</th></tr></thead>
+                <thead><tr><th>날짜</th> <th>이름 (생년월일)</th> <th>업체</th> <th>금액</th> <th>정산상태</th></tr></thead>
                 <tbody id="settleBody"></tbody>
             </table>
         </div>
@@ -138,7 +138,7 @@
                 <button class="btn-small btn-green" onclick="downloadTableAsExcel('recordTable', '활동기록')">엑셀</button>
             </div>
             <table id="recordTable">
-                <thead><tr><th>이름</th> <th>일자</th> <th>활동내역</th></tr></thead>
+                <thead><tr><th>이름 (생년월일)</th> <th>일자</th> <th>활동내역</th></tr></thead>
                 <tbody id="recBody"></tbody>
             </table>
         </div>
@@ -154,13 +154,14 @@
 
         <div id="tab-education" class="table-box" style="display:none;">
             <div class="filter-bar">
-                <label>이름 검색:</label><input type="text" id="eduSearchName" placeholder="예: 홍길동">
+                <label>기간:</label><input type="date" id="eduStart"> ~ <input type="date" id="eduEnd">
+                <label>이름:</label><input type="text" id="eduSearchName" placeholder="전체">
                 <button class="btn-small btn-blue" onclick="loadEducationStats()">조회</button>
                 <button class="btn-small btn-green" onclick="downloadTableAsExcel('eduTable', '기초소양교육_이수대장')">엑셀</button>
             </div>
             <table id="eduTable">
                 <thead><tr><th>수강일자</th> <th>이름</th> <th>생년월일</th> <th>수강과목</th> <th>강의명</th></tr></thead>
-                <tbody id="eduBody"><tr><td colspan="5">조회 버튼을 눌러주세요.</td></tr></tbody>
+                <tbody id="eduBody"><tr><td colspan="5">데이터 로딩 중...</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -186,11 +187,15 @@
             }
             const todayStr = getTodayStr();
             const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
+            const monthAgoStr = monthAgo.toISOString().split('T')[0];
+
             document.getElementById('todayDisplay').innerText = todayStr;
-            document.getElementById('settleStart').value = monthAgo.toISOString().split('T')[0];
-            document.getElementById('settleEnd').value = todayStr;
-            document.getElementById('recStart').value = monthAgo.toISOString().split('T')[0];
-            document.getElementById('recEnd').value = todayStr;
+            // 날짜 초기화 (모든 탭)
+            ['settle', 'rec', 'edu'].forEach(prefix => {
+                document.getElementById(`${prefix}Start`).value = monthAgoStr;
+                document.getElementById(`${prefix}End`).value = todayStr;
+            });
+
             loadAllUsersAndApps();
         };
 
@@ -208,7 +213,6 @@
                 appSnap.forEach(doc => {
                     const d = doc.data();
                     if (!appsMap[d.student_id]) appsMap[d.student_id] = [];
-                    // timestamp 기준 내림차순 정렬을 위해 저장
                     appsMap[d.student_id].push({ docId: doc.id, ...d, ts: d.timestamp ? d.timestamp.toMillis() : 0 });
                 });
 
@@ -245,7 +249,6 @@
                             <button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button>
                         </div>`;
                     } else {
-                        // 미신청 상태 -> 강제 승인 버튼
                         buttonsHtml = `<div class="store-toggles">
                             <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button>
                             <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button>
@@ -269,7 +272,6 @@
         window.changeStore = async (docId, newStore) => {
             showLoading(true);
             try {
-                // 상점만 변경 (activity 필드는 건드리지 않음 -> 학생의 원래 활동 기록 보존)
                 await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" });
                 loadAllUsersAndApps();
             } catch(e) { console.error(e); Swal.fire("오류", "변경 실패", "error"); }
@@ -281,14 +283,13 @@
                 await addDoc(collection(db, "meal_applications"), {
                     student_id: userId, student_name: userName, store_name: storeName,
                     status: "approved", date: getTodayStr(), 
-                    activity: "관리자승인", // [중요] 관리자가 만든 건은 '관리자승인'으로 표시 -> Tab 3에서 필터링됨
-                    timestamp: Timestamp.now(), is_settled: false
+                    activity: "관리자승인", timestamp: Timestamp.now(), is_settled: false
                 });
                 loadAllUsersAndApps();
             }
         };
 
-        // --- Tab 2: 정산 관리 (수정됨: Completed만 표시) ---
+        // --- Tab 2: 정산 관리 (수정됨: 생년월일 + 시간순 + 미정산 기본) ---
         window.loadSettlementData = async () => {
             showLoading(true);
             const start = document.getElementById('settleStart').value;
@@ -298,18 +299,27 @@
             const tbody = document.getElementById('settleBody');
             
             try {
-                const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("date", "desc")));
+                // 1. 유저 정보 미리 로딩 (생년월일 매칭용)
+                let userMap = {};
+                const uSnap = await getDocs(collection(db, "users"));
+                uSnap.forEach(d => userMap[d.id] = d.data());
+
+                // 2. 급식 데이터 로딩 (전체 시간 역순)
+                const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("timestamp", "desc")));
                 let list = [], totalCnt=0, totalPrice=0, totalUnpaid=0;
 
                 snap.forEach(doc => {
                     const d = doc.data();
+                    // 날짜 필터
                     if (d.date < start || d.date > end) return;
+                    // 식당 필터
                     if (targetStore !== 'all' && d.store_name !== targetStore) return;
                     
-                    // [중요] 'completed' 상태(식사완료)인 것만 정산 리스트에 표시
+                    // [중요] 'completed' 상태(식사완료)인 것만 표시
                     if (d.status !== 'completed') return;
 
                     const isSettled = d.is_settled === true;
+                    // 정산상태 필터
                     if (targetStatus === 'no' && isSettled) return;
                     if (targetStatus === 'yes' && !isSettled) return;
 
@@ -318,7 +328,10 @@
                     totalPrice += price;
                     if(!isSettled) totalUnpaid += price;
                     
-                    list.push({ id: doc.id, ...d, price, isSettled });
+                    // 유저 정보 매칭
+                    const u = userMap[d.student_id] || { name: d.student_name, birth: '' };
+
+                    list.push({ id: doc.id, ...d, price, isSettled, uName: u.name, uBirth: u.birth });
                 });
 
                 document.getElementById('sumCount').innerText = totalCnt + "건";
@@ -328,10 +341,16 @@
                 tbody.innerHTML = list.length ? "" : "<tr><td colspan='5'>내역 없음</td></tr>";
                 list.forEach(item => {
                     const btn = item.isSettled ? 
-                        `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">✅ 정산완료</button>` : 
-                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">❌ 미정산</button>`; // 기본 미정산
+                        `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">🟢 정산완료</button>` : 
+                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`; 
                     
-                    tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.store_name}</td><td>${item.price.toLocaleString()}</td><td>${btn}</td></tr>`;
+                    tbody.innerHTML += `<tr>
+                        <td>${item.date}</td>
+                        <td>${item.uName} <span style="font-size:12px;color:#888;">(${item.uBirth})</span></td>
+                        <td>${item.store_name}</td>
+                        <td>${item.price.toLocaleString()}원</td>
+                        <td>${btn}</td>
+                    </tr>`;
                 });
             } catch(e) { console.error(e); }
             showLoading(false);
@@ -344,7 +363,7 @@
             }
         };
 
-        // --- Tab 3: 통합 기록 (수정됨) ---
+        // --- Tab 3: 통합 기록 (수정됨: 생년월일 + 시간순 + 관리자승인 제외) ---
         window.loadRecords = async () => {
             showLoading(true);
             const start = document.getElementById('recStart').value;
@@ -353,20 +372,31 @@
             const tbody = document.getElementById('recBody');
             
             try {
+                // 1. 유저 정보 매핑
+                let userMap = {};
+                const uSnap = await getDocs(collection(db, "users"));
+                uSnap.forEach(d => userMap[d.id] = d.data());
+
                 let records = [];
                 const add = (snap, type) => snap.forEach(d => {
                     const data = d.data();
                     if(data.date >= start && data.date <= end) {
                         let actName = data.activity || (type==='meal' ? '식사' : '간식');
                         
-                        // [중요] 관리자 승인 건은 기록에서 제외
                         if(actName.includes('관리자')) return; 
-
-                        // [수정] 급식인 경우 가게이름 표시 안함. 그냥 원래 활동내용(기초소양 등) 표시
-                        // 만약 활동 내용이 없는 단순 식사라면 '식사'라고 표시됨.
-                        
                         if(filterAct && actName !== filterAct) return;
-                        records.push({ date: data.date, name: data.student_name, act: actName });
+
+                        // 타임스탬프가 있으면 그것으로, 없으면 날짜로 정렬값 생성
+                        const ts = data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime();
+                        const u = userMap[data.student_id] || { name: data.student_name, birth: '' };
+
+                        records.push({ 
+                            date: data.date, 
+                            name: u.name, 
+                            birth: u.birth,
+                            act: actName,
+                            ts: ts 
+                        });
                     }
                 });
 
@@ -377,28 +407,78 @@
                 ]);
 
                 add(attSnap, 'attendance'); add(mealSnap, 'meal'); add(snackSnap, 'snack');
-                records.sort((a,b) => b.date.localeCompare(a.date));
+                
+                // 시간순 정렬 (최신순)
+                records.sort((a,b) => b.ts - a.ts);
 
                 tbody.innerHTML = records.length ? "" : "<tr><td colspan='3'>기록 없음</td></tr>";
-                records.forEach(r => tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.date}</td><td>${r.act}</td></tr>`);
+                records.forEach(r => tbody.innerHTML += `<tr>
+                    <td>${r.name} <span style="font-size:12px;color:#888;">(${r.birth})</span></td>
+                    <td>${r.date}</td>
+                    <td>${r.act}</td>
+                </tr>`);
             } catch(e) { console.error(e); }
             showLoading(false);
         };
 
-        // --- Tab 4, 5 및 기타 유틸 ---
+        // --- Tab 5: 기초소양교육 (수정됨: 자동로딩 + 기간 필터) ---
+        window.loadEducationStats = async () => {
+            showLoading(true);
+            const tbody = document.getElementById('eduBody');
+            const searchName = document.getElementById('eduSearchName').value.trim();
+            const start = document.getElementById('eduStart').value;
+            const end = document.getElementById('eduEnd').value;
+            
+            try {
+                // 전체를 시간순으로 가져옴
+                const q = query(collection(db, "education_records"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                let records = [];
+                
+                querySnapshot.forEach(doc => {
+                    const d = doc.data();
+                    // 기간 필터 (날짜 문자열 비교)
+                    if (d.date < start || d.date > end) return;
+                    // 이름 필터
+                    if (searchName && !d.student_name.includes(searchName)) return;
+                    records.push(d);
+                });
+
+                tbody.innerHTML = "";
+                if (records.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>";
+                } else {
+                    records.forEach(d => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${d.date}</td>
+                                <td>${d.student_name}</td>
+                                <td>${d.student_birth || '-'}</td>
+                                <td><span class="badge badge-blue">${d.category}</span></td>
+                                <td style="text-align:left; padding-left:15px;">${d.video_title}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; }
+            showLoading(false);
+        };
+
+        // --- 기타 유틸 ---
         window.loadAds = async () => { /* 기존 코드 유지 */ };
         window.saveAds = async () => { /* 기존 코드 유지 */ };
-        window.loadEducationStats = async () => { /* 기존 코드 유지 */ };
         window.switchTab = (tabName) => {
             document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).style.display = 'block';
-            // 버튼 활성화
+            
             const idx = ['users','settlement','records','ads','education'].indexOf(tabName);
             if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+            
             if(tabName==='users') loadAllUsersAndApps();
-            if(tabName==='settlement') loadSettlementData(); // 탭 전환시 로드
-            if(tabName==='records') loadRecords(); // 탭 전환시 로드
+            if(tabName==='settlement') loadSettlementData();
+            if(tabName==='records') loadRecords();
+            if(tabName==='education') loadEducationStats(); // 탭 열 때 자동 로딩
         };
         window.refreshData = () => { /* 기존 유지 */ };
         window.viewPw = (pw) => Swal.fire('비밀번호', pw, 'info');
