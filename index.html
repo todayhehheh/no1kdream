@@ -88,7 +88,7 @@
         .card-attendance { background: linear-gradient(135deg, #6C5CE7, #8e7bf5); }
         .card-snack { background: linear-gradient(135deg, #FF7675, #fab1a0); }
 
-        /* 왼쪽 하단: 광고 3개 (나머지 공간 모두 차지 & 4:5 비율 유지) */
+        /* 왼쪽 하단: 광고 3개 (수정됨: img 태그 사용) */
         .left-bottom {
             flex: 1; 
             display: flex; 
@@ -98,19 +98,24 @@
         }
         
         .ad-wrapper {
-            height: 100%; /* 부모 높이에 맞춤 */
-            width: auto; 
-            aspect-ratio: 4 / 5; /* 비율 고정 -> 너비 자동 조절 */
-            
+            height: 100%; width: auto; 
+            aspect-ratio: 4 / 5;
             border-radius: var(--radius-card);
             overflow: hidden;
             box-shadow: var(--shadow-card);
             background: #eee;
             position: relative;
             transition: transform 0.3s;
+            display: block; /* a 태그 block 처리 */
         }
         .ad-wrapper:hover { transform: translateY(-5px); z-index: 10; }
-        .ad-img { width: 100%; height: 100%; background-size: cover; background-position: center; display: block; }
+        
+        /* 이미지 스타일 개선: 꽉 차게 */
+        .ad-img-tag {
+            width: 100%; height: 100%;
+            object-fit: cover; /* 비율 유지하며 꽉 채움 */
+            display: block;
+        }
 
 
         /* [오른쪽 컬럼] 급식 메뉴판 */
@@ -239,15 +244,15 @@
                 </div>
 
                 <div class="left-bottom">
-                    <div class="ad-wrapper">
-                        <a id="ad1Link" href="#" target="_blank" class="ad-img" id="ad1"></a>
-                    </div>
-                    <div class="ad-wrapper">
-                        <a id="ad2Link" href="#" target="_blank" class="ad-img" id="ad2"></a>
-                    </div>
-                    <div class="ad-wrapper">
-                        <a id="ad3Link" href="#" target="_blank" class="ad-img" id="ad3"></a>
-                    </div>
+                    <a id="ad1Link" href="#" target="_blank" class="ad-wrapper">
+                        <img id="ad1Img" class="ad-img-tag" alt="광고1" onerror="this.src='https://placehold.co/400x500?text=No+Image';">
+                    </a>
+                    <a id="ad2Link" href="#" target="_blank" class="ad-wrapper">
+                        <img id="ad2Img" class="ad-img-tag" alt="광고2" onerror="this.src='https://placehold.co/400x500?text=No+Image';">
+                    </a>
+                    <a id="ad3Link" href="#" target="_blank" class="ad-wrapper">
+                        <img id="ad3Img" class="ad-img-tag" alt="광고3" onerror="this.src='https://placehold.co/400x500?text=No+Image';">
+                    </a>
                 </div>
             </div>
 
@@ -307,17 +312,17 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- 광고 로드 ---
+        // --- 광고 로드 (수정됨) ---
         const DEFAULT_ADS = {
-            ad1: { image: "https://via.placeholder.com/400x500/eee/aaa?text=AD+1", link: "#" },
-            ad2: { image: "https://via.placeholder.com/400x500/ddd/999?text=AD+2", link: "#" },
-            ad3: { image: "https://via.placeholder.com/400x500/ccc/888?text=AD+3", link: "#" }
+            ad1: { image: "https://placehold.co/400x500?text=Dream+Center", link: "#" },
+            ad2: { image: "https://placehold.co/400x500?text=Ad+Space+2", link: "#" },
+            ad3: { image: "https://placehold.co/400x500?text=Ad+Space+3", link: "#" }
         };
 
         const applyDefaultAds = () => {
-            document.getElementById('ad1').style.backgroundImage = `url('${DEFAULT_ADS.ad1.image}')`;
-            document.getElementById('ad2').style.backgroundImage = `url('${DEFAULT_ADS.ad2.image}')`;
-            document.getElementById('ad3').style.backgroundImage = `url('${DEFAULT_ADS.ad3.image}')`;
+            document.getElementById('ad1Img').src = DEFAULT_ADS.ad1.image;
+            document.getElementById('ad2Img').src = DEFAULT_ADS.ad2.image;
+            document.getElementById('ad3Img').src = DEFAULT_ADS.ad3.image;
         };
 
         const loadAds = async () => {
@@ -326,18 +331,23 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    const setAd = (id, linkId, imgKey, linkKey, def) => {
-                        const el = document.getElementById(id);
+                    const setAd = (imgId, linkId, imgKey, linkKey, def) => {
+                        const imgEl = document.getElementById(imgId);
                         const linkEl = document.getElementById(linkId);
-                        if(data[imgKey]) el.style.backgroundImage = `url('${data[imgKey]}')`;
-                        else el.style.backgroundImage = `url('${def.image}')`;
+                        
+                        if(data[imgKey] && data[imgKey].trim() !== "") {
+                            imgEl.src = data[imgKey];
+                        } else {
+                            imgEl.src = def.image;
+                        }
+                        
                         if(data[linkKey]) linkEl.href = data[linkKey];
                     };
-                    setAd('ad1', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
-                    setAd('ad2', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
-                    setAd('ad3', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
+                    setAd('ad1Img', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
+                    setAd('ad2Img', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
+                    setAd('ad3Img', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
                 } else applyDefaultAds();
-            } catch(e) { applyDefaultAds(); }
+            } catch(e) { console.error(e); applyDefaultAds(); }
         };
 
         // --- 기기 인증 ---
@@ -350,7 +360,7 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- 모달 로직 ---
+        // --- 모달 로직 (기존 동일) ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
@@ -444,7 +454,7 @@
                     
                     collectionName = "meal_applications"; 
                     dataPayload.store_name = targetName; 
-                    dataPayload.status = "approved"; // [수정됨] 신청 즉시 '승인됨' 상태로 저장
+                    dataPayload.status = "approved";
                     successMsg = `${userData.name}님, [${targetName}] 신청 승인되었습니다.`;
                 
                 } else if(type === 'snack') {
