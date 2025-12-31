@@ -1,286 +1,160 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>매출 및 정산 확인</title>
-    <!-- Shared Style -->
-    <link rel="stylesheet" href="css/style.css">
+    <title>가게 사장님 장부</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Fintech App Style Override */
-        body {
-            background: #F0F4F8;
-            color: #333;
-            padding: 20px;
+        body { font-family: 'Pretendard', sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        
+        .summary-card {
+            background: #e3f2fd; color: #1565c0; padding: 20px; border-radius: 15px;
+            margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 18px;
+            display: flex; justify-content: space-around;
         }
 
-        .glass-container {
-            background: white;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            max-width: 600px;
-            padding: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
+        input[type="date"] { padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
+        button { padding: 8px 16px; background: #212529; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #495057; }
 
-        /* Header */
-        .app-header {
-            padding: 30px 25px 50px 25px;
-            background: linear-gradient(135deg, #1e88e5, #1565c0);
-            color: white;
-            border-radius: 0 0 25px 25px;
-            margin-bottom: -30px;
-            /* Overlap effect */
-        }
-
-        .app-header h1 {
-            color: white;
-            margin: 0;
-            font-size: 24px;
-            text-align: left;
-            opacity: 0.95;
-        }
-
-        .app-header p {
-            color: rgba(255, 255, 255, 0.8);
-            margin: 5px 0 0 0;
-            font-size: 14px;
-        }
-
-        /* Total Card */
-        .balance-card {
-            background: white;
-            margin: 0 20px;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            text-align: center;
-            position: relative;
-            z-index: 10;
-        }
-
-        .balance-label {
-            font-size: 14px;
-            color: #78909c;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .balance-amount {
-            font-size: 36px;
-            font-weight: 800;
-            color: #263238;
-            letter-spacing: -0.5px;
-        }
-
-        .balance-amount span {
-            font-size: 18px;
-            font-weight: 600;
-            color: #78909c;
-            margin-left: 2px;
-        }
-
-        /* List Section */
-        .list-section {
-            padding: 40px 20px 20px 20px;
-        }
-
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-left: 5px;
-        }
-
-        .list-header h3 {
-            margin: 0;
-            color: #37474f;
-            font-size: 17px;
-        }
-
-        .count-badge {
-            background: #e3f2fd;
-            color: #1565c0;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .log-item {
-            background: white;
-            padding: 18px;
-            border-radius: 16px;
-            margin-bottom: 12px;
-            border: 1px solid #eceff1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-        }
-
-        .log-left {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .log-date {
-            font-size: 12px;
-            color: #90a4ae;
-        }
-
-        .log-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #37474f;
-        }
-
-        .log-amount {
-            font-size: 17px;
-            font-weight: 700;
-            color: #1e88e5;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: #b0bec5;
-        }
-
-        .empty-state span {
-            font-size: 40px;
-            display: block;
-            margin-bottom: 10px;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 15px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: #f1f3f5; color: #495057; }
+        
+        .empty-msg { text-align: center; color: #868e96; padding: 30px; }
     </style>
 </head>
-
 <body>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="spinner"></div>
-    </div>
+    <div class="container">
+        <h1 id="storeTitle">가게 장부</h1>
 
-    <!-- Main Container -->
-    <div class="glass-container">
-
-        <div class="app-header">
-            <h1 id="storeName">가게 이름</h1>
-            <p>사장님, 오늘도 정말 고생 많으셨습니다! 👨‍🍳</p>
+        <div class="summary-card">
+            <div>총 <span id="totalCount">0</span>건</div>
+            <div>합계 <span id="totalAmount">0</span>원</div>
         </div>
 
-        <div class="balance-card">
-            <div class="balance-label">결제 예정 금액</div>
-            <div class="balance-amount" id="totalAmount">0<span>원</span></div>
+        <div class="filter-bar">
+            <input type="date" id="startDate">
+            <span style="align-self: center;">~</span>
+            <input type="date" id="endDate">
+            <button onclick="loadData()">조회</button>
         </div>
 
-        <div class="list-section">
-            <div class="list-header">
-                <h3>📋 식사 결제 내역 (미정산)</h3>
-                <span class="count-badge" id="totalCount">0건</span>
-            </div>
-
-            <div id="listBox">
-                <!-- Content -->
-            </div>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>학생 이름</th>
+                    <th>금액</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody id="listBody">
+                <tr><td colspan="4" class="empty-msg">데이터를 불러오는 중...</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <script type="module">
-        import { db, collection, getDocs, query, where } from "./js/firebase-config.js";
+        import { db, collection, getDocs, query, where, orderBy } from "./js/firebase-config.js";
 
-        // Constants
-        const urlParams = new URLSearchParams(window.location.search);
-        const myStore = urlParams.get('store');
-
-        const showLoading = (show) => { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
+        // 1. 사장님 로그인 (간단하게 가게 이름 선택)
+        const STORES = ["달인보쌈", "미스테리분식", "연김밥"];
+        let myStore = localStorage.getItem('my_store_name');
 
         window.onload = async () => {
             if (!myStore) {
-                Swal.fire('오류', '잘못된 접근입니다. QR코드를 다시 스캔해주세요.', 'error');
-                document.getElementById('storeName').innerText = "가게 정보 없음";
-                return;
+                const { value: store } = await Swal.fire({
+                    title: '가게를 선택해주세요',
+                    input: 'select',
+                    inputOptions: {
+                        '달인보쌈': '달인보쌈',
+                        '미스테리분식': '미스테리분식',
+                        '연김밥': '연김밥'
+                    },
+                    inputPlaceholder: '가게 선택',
+                    showCancelButton: false,
+                    allowOutsideClick: false
+                });
+                if (store) {
+                    myStore = store;
+                    localStorage.setItem('my_store_name', store);
+                }
             }
-            document.getElementById('storeName').innerText = myStore;
-            showLoading(true);
+            
+            document.getElementById('storeTitle').innerText = `${myStore} 장부`;
+            
+            // 날짜 초기화 (이번 달 1일 ~ 오늘)
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            
+            document.getElementById('startDate').value = firstDay;
+            document.getElementById('endDate').value = today;
+
+            loadData();
+        };
+
+        window.loadData = async () => {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const tbody = document.getElementById('listBody');
+            
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">로딩 중...</td></tr>';
 
             try {
-                // Fetch completed meals for this store that are NOT settled
-                const q = query(collection(db, "meal_applications"), where("store_name", "==", myStore), where("status", "==", "completed"));
-                const snap = await getDocs(q);
+                // 시간순 정렬을 위해 timestamp 기준으로 가져옴
+                const q = query(collection(db, "meal_applications"), 
+                    where("store_name", "==", myStore),
+                    where("status", "==", "completed"), // 결제 완료된 것만
+                    orderBy("timestamp", "desc") // [핵심] 최신순 정렬
+                );
 
-                let total = 0;
-                let count = 0;
+                const snapshot = await getDocs(q);
                 let list = [];
+                let sum = 0;
 
-                snap.forEach(doc => {
+                snapshot.forEach(doc => {
                     const d = doc.data();
-                    // Double check is_settled, though usually handled by server or admin check
-                    // If 'is_settled' field doesn't exist, it's false.
-                    if (d.is_settled !== true) {
+                    // 날짜 필터 (클라이언트 사이드)
+                    if (d.date >= start && d.date <= end) {
                         list.push(d);
-                        total += Number(d.amount);
-                        count++;
+                        sum += (d.amount || 0);
                     }
                 });
 
-                // Sort by date desc
-                list.sort((a, b) => {
-                    if (a.date !== b.date) return b.date.localeCompare(a.date);
-                    return b.timestamp - a.timestamp;
-                });
-
-                const listBox = document.getElementById('listBox');
-                listBox.innerHTML = "";
+                document.getElementById('totalCount').innerText = list.length;
+                document.getElementById('totalAmount').innerText = sum.toLocaleString();
 
                 if (list.length === 0) {
-                    listBox.innerHTML = `
-                        <div class="empty-state">
-                            <span>🎉</span>
-                            모두 정산되었습니다.<br>
-                            (현재 미정산 내역이 없습니다)
-                        </div>`;
-                } else {
-                    list.forEach(item => {
-                        // Mask Name
-                        const maskedName = item.student_name.length > 2
-                            ? item.student_name[0] + "*" + item.student_name.substring(2)
-                            : item.student_name[0] + "*";
-
-                        const shortDate = item.date.substring(5).replace('-', '.');
-
-                        listBox.innerHTML += `
-                            <div class="log-item">
-                                <div class="log-left">
-                                    <span class="log-date">${shortDate}</span>
-                                    <span class="log-name">${maskedName}</span>
-                                </div>
-                                <div class="log-amount">${Number(item.amount).toLocaleString()}원</div>
-                            </div>
-                        `;
-                    });
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">조회된 내역이 없습니다.</td></tr>';
+                    return;
                 }
 
-                document.getElementById('totalAmount').innerHTML = `${total.toLocaleString()}<span>원</span>`;
-                document.getElementById('totalCount').innerText = `${count}건`;
-                showLoading(false);
+                tbody.innerHTML = "";
+                list.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.date}</td>
+                            <td>${item.student_name}</td>
+                            <td style="font-weight:bold; color:#212529;">${item.amount.toLocaleString()}원</td>
+                            <td><span style="color:#2f9e44; font-weight:bold;">결제완료</span></td>
+                        </tr>
+                    `;
+                });
 
             } catch (e) {
                 console.error(e);
-                showLoading(false);
-                Swal.fire('오류', '데이터를 불러오지 못했습니다.', 'error');
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">오류 발생</td></tr>';
             }
         };
     </script>
-
 </body>
-
 </html>
