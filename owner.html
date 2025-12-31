@@ -10,7 +10,8 @@
         body { font-family: 'Pretendard', sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
         
-        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .store-badge { display:block; width:fit-content; margin:0 auto 30px; background:#e3f2fd; color:#1565c0; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:14px; }
         
         .summary-card {
             background: #e3f2fd; color: #1565c0; padding: 20px; border-radius: 15px;
@@ -28,12 +29,14 @@
         th { background: #f1f3f5; color: #495057; }
         
         .empty-msg { text-align: center; color: #868e96; padding: 30px; }
+        .row-item:hover { background-color: #f8f9fa; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1 id="storeTitle">가게 장부</h1>
+        <h1 id="pageTitle">가게 장부</h1>
+        <div id="storeNameBadge" class="store-badge">가게 확인 중...</div>
 
         <div class="summary-card">
             <div>총 <span id="totalCount">0</span>건</div>
@@ -63,13 +66,17 @@
     </div>
 
     <script type="module">
-        import { db, collection, getDocs, query, where, orderBy } from "./js/firebase-config.js";
+        import { db, collection, getDocs, query, where } from "./js/firebase-config.js";
 
-        // 1. 사장님 로그인 (간단하게 가게 이름 선택)
-        const STORES = ["달인보쌈", "미스테리분식", "연김밥"];
-        let myStore = localStorage.getItem('my_store_name');
+        // [핵심] 1. URL 파라미터에서 가게 이름 가져오기 (?store=달인보쌈)
+        const urlParams = new URLSearchParams(window.location.search);
+        let myStore = urlParams.get('store'); 
+
+        // 만약 URL에 없으면 로컬스토리지 확인, 그래도 없으면 팝업
+        if (!myStore) myStore = localStorage.getItem('my_store_name');
 
         window.onload = async () => {
+            // 가게 정보가 아예 없으면 선택 팝업 띄우기
             if (!myStore) {
                 const { value: store } = await Swal.fire({
                     title: '가게를 선택해주세요',
@@ -89,7 +96,7 @@
                 }
             }
             
-            document.getElementById('storeTitle').innerText = `${myStore} 장부`;
+            document.getElementById('storeNameBadge').innerText = myStore;
             
             // 날짜 초기화 (이번 달 1일 ~ 오늘)
             const now = new Date();
@@ -110,11 +117,10 @@
             tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">로딩 중...</td></tr>';
 
             try {
-                // 시간순 정렬을 위해 timestamp 기준으로 가져옴
+                // [수정된 로직] orderBy를 제거하여 색인 오류 방지 -> JS에서 정렬
                 const q = query(collection(db, "meal_applications"), 
                     where("store_name", "==", myStore),
-                    where("status", "==", "completed"), // 결제 완료된 것만
-                    orderBy("timestamp", "desc") // [핵심] 최신순 정렬
+                    where("status", "==", "completed") // 결제 완료된 것만
                 );
 
                 const snapshot = await getDocs(q);
@@ -125,12 +131,17 @@
                     const d = doc.data();
                     // 날짜 필터 (클라이언트 사이드)
                     if (d.date >= start && d.date <= end) {
-                        list.push(d);
+                        // 정렬을 위한 timestamp 값 (없으면 날짜 문자열로 대체)
+                        const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
+                        list.push({ ...d, ts: ts });
                         sum += (d.amount || 0);
                     }
                 });
 
-                document.getElementById('totalCount').innerText = list.length;
+                // [핵심] 여기서 최신순(내림차순) 정렬 수행
+                list.sort((a, b) => b.ts - a.ts);
+
+                document.getElementById('totalCount').innerText = list.length + "건";
                 document.getElementById('totalAmount').innerText = sum.toLocaleString();
 
                 if (list.length === 0) {
@@ -141,7 +152,7 @@
                 tbody.innerHTML = "";
                 list.forEach(item => {
                     tbody.innerHTML += `
-                        <tr>
+                        <tr class="row-item">
                             <td>${item.date}</td>
                             <td>${item.student_name}</td>
                             <td style="font-weight:bold; color:#212529;">${item.amount.toLocaleString()}원</td>
@@ -152,7 +163,7 @@
 
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">오류 발생</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-msg" style="color:red;">데이터 불러오기 실패<br><small>' + e.message + '</small></td></tr>';
             }
         };
     </script>
