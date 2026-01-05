@@ -57,21 +57,11 @@
         #loadingOverlay { display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #6C5CE7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* PDF 출력용 숨김 영역 */
-        #hidden-print-zone { 
-            position: fixed; top: 0; left: 0; width: 210mm; min-height: 297mm; 
-            background: white; z-index: -9999; padding: 15mm; 
-            box-sizing: border-box; opacity: 0; pointer-events: none; 
-            color: black !important;
-        }
+        #hidden-print-zone { position: fixed; top: 0; left: 0; width: 210mm; min-height: 297mm; background: white; z-index: -9999; padding: 15mm; box-sizing: border-box; opacity: 0; pointer-events: none; color: black !important; }
         .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
         .report-title { font-size: 28px; font-weight: bold; margin: 0; color: #000; }
         .report-sub { margin-top: 10px; font-size: 14px; color: #333; }
-        .report-summary-box { 
-            border: 2px solid #333; background-color: #f8f9fa; 
-            padding: 15px; margin-bottom: 20px; 
-            display: flex; justify-content: space-around; font-weight: bold; font-size: 14px;
-        }
+        .report-summary-box { border: 2px solid #333; background-color: #f8f9fa; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-around; font-weight: bold; font-size: 14px; }
         .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .report-table th, .report-table td { border: 1px solid #999; padding: 8px; text-align: center; color: #000; }
         .report-table th { background-color: #eee; }
@@ -98,6 +88,7 @@
             <button class="tab-btn" onclick="switchTab('records')">3. 통합 기록</button>
             <button class="tab-btn" onclick="switchTab('ads')">4. 광고 설정</button>
             <button class="tab-btn" onclick="switchTab('education')">5. 기초소양교육</button>
+            <button class="tab-btn" onclick="switchTab('snacks')">6. 부식 통계</button>
         </div>
 
         <div id="tab-users" class="table-box">
@@ -186,6 +177,19 @@
                 <tbody id="eduBody"><tr><td colspan="5">데이터 로딩 중...</td></tr></tbody>
             </table>
         </div>
+
+        <div id="tab-snacks" class="table-box" style="display:none;">
+            <div class="filter-bar">
+                <label>기간:</label><input type="date" id="snackStart"> ~ <input type="date" id="snackEnd">
+                <label>이름:</label><input type="text" id="snackSearchName" placeholder="전체">
+                <button class="btn-small btn-blue" onclick="loadSnackStats()">조회</button>
+                <button class="btn-small btn-green" onclick="downloadTableAsExcel('snackTable', '부식대장')">엑셀</button>
+            </div>
+            <table id="snackTable">
+                <thead><tr><th>일자</th> <th>이름</th> <th>생년월일</th> <th>신청내역</th></tr></thead>
+                <tbody id="snackBody"><tr><td colspan="4">데이터 로딩 중...</td></tr></tbody>
+            </table>
+        </div>
     </div>
 
     <div id="hidden-print-zone"></div>
@@ -214,7 +218,7 @@
             const monthAgoStr = monthAgo.toISOString().split('T')[0];
 
             document.getElementById('todayDisplay').innerText = todayStr;
-            ['settle', 'rec', 'edu'].forEach(prefix => {
+            ['settle', 'rec', 'edu', 'snack'].forEach(prefix => {
                 document.getElementById(`${prefix}Start`).value = monthAgoStr;
                 document.getElementById(`${prefix}End`).value = todayStr;
             });
@@ -500,13 +504,67 @@
             showLoading(false);
         };
 
-        // --- 유틸리티 및 등록 기능 (완벽 구현됨) ---
+        // --- Tab 6: 부식 통계 (신규 기능) ---
+        window.loadSnackStats = async () => {
+            showLoading(true);
+            const tbody = document.getElementById('snackBody');
+            const searchName = document.getElementById('snackSearchName').value.trim();
+            const start = document.getElementById('snackStart').value;
+            const end = document.getElementById('snackEnd').value;
+            
+            try {
+                // 1. 유저 정보 (생년월일 매핑용)
+                let userMap = {};
+                const uSnap = await getDocs(collection(db, "users"));
+                uSnap.forEach(d => userMap[d.id] = d.data());
+
+                // 2. 부식 데이터 (색인 없이 가져오기 위해 orderBy 제거 후 JS 정렬)
+                const q = query(collection(db, "snacks"));
+                const querySnapshot = await getDocs(q);
+                let list = [];
+
+                querySnapshot.forEach(doc => {
+                    const d = doc.data();
+                    // 날짜 필터
+                    if (d.date < start || d.date > end) return;
+                    // 이름 필터
+                    if (searchName && !d.student_name.includes(searchName)) return;
+
+                    const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
+                    const u = userMap[d.student_id] || { birth: '-' };
+                    
+                    list.push({ ...d, ts: ts, birth: u.birth });
+                });
+
+                // 최신순(초단위 내림차순) 정렬
+                list.sort((a, b) => b.ts - a.ts);
+
+                tbody.innerHTML = "";
+                if (list.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='4'>조회된 내역이 없습니다.</td></tr>";
+                } else {
+                    list.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.date}</td>
+                                <td>${item.student_name}</td>
+                                <td>${item.birth}</td>
+                                <td>${item.item || '간식'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>로딩 실패</td></tr>"; }
+            showLoading(false);
+        };
+
+        // --- 유틸리티 및 등록 기능 ---
         window.switchTab = (tabName) => {
             document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).style.display = 'block';
             
-            const idx = ['users','settlement','records','ads','education'].indexOf(tabName);
+            const idx = ['users','settlement','records','ads','education','snacks'].indexOf(tabName);
             if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
             
             if(tabName==='users') loadAllUsersAndApps();
@@ -514,6 +572,7 @@
             if(tabName==='records') loadRecords();
             if(tabName==='ads') loadAds(); 
             if(tabName==='education') loadEducationStats(); 
+            if(tabName==='snacks') loadSnackStats(); // 신규
         };
         
         window.refreshData = () => { 
@@ -525,12 +584,12 @@
                 if (idx === 2) loadRecords();
                 if (idx === 3) loadAds();
                 if (idx === 4) loadEducationStats();
+                if (idx === 5) loadSnackStats();
                 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
                 Toast.fire({ icon: 'success', title: '새로고침 완료' });
             }
         };
 
-        // 기기 등록 및 해제 (복구됨)
         window.registerThisDevice = () => {
             if(confirm("이 PC를 키오스크용 기기로 등록하시겠습니까?\n등록된 기기에서만 '키오스크 화면' 접속이 가능합니다.")) {
                 localStorage.setItem('kiosk_auth_token', 'dream_center_pc');
@@ -545,7 +604,6 @@
             }
         };
 
-        // 회원 비밀번호 확인 및 변경 (복구됨)
         window.viewPw = (pw) => Swal.fire('비밀번호', pw, 'info');
         
         window.changePw = async (userId) => {
@@ -563,7 +621,6 @@
             }
         };
 
-        // 엑셀 및 PDF 다운로드
         window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
 
         window.generateSettlementPDF = () => {
