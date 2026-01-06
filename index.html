@@ -117,7 +117,7 @@
         }
 
 
-        /* [오른쪽 컬럼] 급식 메뉴판 */
+        /* [오른쪽 컬럼] 급식 메뉴판 (5단 변경) */
         .right-column {
             flex: 1; /* 화면의 약 35% 차지 */
             background: white;
@@ -127,7 +127,7 @@
             display: flex; flex-direction: column;
         }
         .meal-title-row {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px; /* 여백 약간 줄임 */
         }
         .meal-icon-bg {
             background: #FF7675; color: white; width: 40px; height: 40px;
@@ -139,8 +139,8 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr; 
-            grid-template-rows: repeat(4, 1fr); 
-            gap: 15px;
+            grid-template-rows: repeat(5, 1fr); /* [수정] 4단 -> 5단 변경 */
+            gap: 12px; /* [수정] 5개라서 간격을 조금 줄임 */
         }
         
         .meal-card-btn {
@@ -157,17 +157,18 @@
         .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
         
         .meal-img-box {
-            width: 110px; height: 100%;
+            width: 100px; /* [수정] 5단에 맞춰 이미지 크기 살짝 조정 */
+            height: 100%;
             background-color: #eee;
             background-size: cover; background-position: center;
             flex-shrink: 0; 
         }
         .meal-info {
-            padding: 0 20px;
+            padding: 0 15px; /* [수정] 패딩 조정 */
             flex: 1;
         }
-        .meal-name { font-size: 19px; font-weight: 800; color: #495057; display: block; margin-bottom: 4px; }
-        .meal-desc { font-size: 13px; color: #868E96; font-weight: 500; }
+        .meal-name { font-size: 18px; font-weight: 800; color: #495057; display: block; margin-bottom: 2px; }
+        .meal-desc { font-size: 12px; color: #868E96; font-weight: 500; }
         
 
         /* 유틸리티 */
@@ -286,11 +287,19 @@
                         </div>
                     </button>
 
-                    <button class="meal-card-btn" disabled>
-                        <div class="meal-img-box" style="background-color: #eee; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:24px;">🚫</div>
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '동일로즉석떡볶이')">
+                        <div class="meal-img-box" style="background-image: url('https://placehold.co/100x100/FF7675/white?text=Topokki');"></div>
                         <div class="meal-info">
-                            <span class="meal-name">준비중</span>
-                            <span class="meal-desc">Coming Soon</span>
+                            <span class="meal-name">동일로떡볶이</span>
+                            <span class="meal-desc">즉석 떡볶이 맛집</span>
+                        </div>
+                    </button>
+
+                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '우리동네 첫끼')">
+                        <div class="meal-img-box" style="background-image: url('https://placehold.co/100x100/6C5CE7/white?text=Meal');"></div>
+                        <div class="meal-info">
+                            <span class="meal-name">우리동네 첫끼</span>
+                            <span class="meal-desc">든든한 한끼 식사</span>
                         </div>
                     </button>
                 </div>
@@ -311,14 +320,11 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- [핵심 수정] 구글 드라이브 링크 자동 변환 (thumbnail 방식) ---
+        // --- [핵심] 구글 드라이브 링크 자동 변환 (thumbnail 방식) ---
         const convertToDirectLink = (url) => {
             if (!url) return "";
-            // 구글 드라이브 공유 링크 패턴 (file/d/ID/view) 감지
             const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
             if (match && match[1]) {
-                // [중요] 'thumbnail' 주소로 변환 (CORS 우회에 강력함)
-                // sz=w1000 은 가로 1000px 고화질 요청
                 return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
             }
             return url;
@@ -349,7 +355,6 @@
                         
                         let rawUrl = data[imgKey];
                         if(rawUrl && rawUrl.trim() !== "") {
-                            // 자동 변환 적용!
                             imgEl.src = convertToDirectLink(rawUrl);
                         } else {
                             imgEl.src = def.image;
