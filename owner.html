@@ -13,7 +13,6 @@
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .store-badge { display:block; width:fit-content; margin:0 auto 30px; background:#e3f2fd; color:#1565c0; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:14px; }
         
-        /* 요약 카드 스타일 변경 (미정산 강조) */
         .summary-card {
             background: #fff5f5; border: 2px solid #ffc9c9; color: #c92a2a; 
             padding: 25px; border-radius: 15px;
@@ -35,7 +34,6 @@
         .empty-msg { text-align: center; color: #868e96; padding: 30px; }
         .row-item:hover { background-color: #f8f9fa; }
 
-        /* 상태 뱃지 */
         .badge-unpaid { background: #ffe3e3; color: #fa5252; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
         .badge-paid { background: #d3f9d8; color: #2b8a3e; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
     </style>
@@ -77,7 +75,6 @@
     <script type="module">
         import { db, collection, getDocs, query, where } from "./js/firebase-config.js";
 
-        // URL 파라미터 체크
         const urlParams = new URLSearchParams(window.location.search);
         let myStore = urlParams.get('store'); 
         if (!myStore) myStore = localStorage.getItem('my_store_name');
@@ -87,7 +84,13 @@
                 const { value: store } = await Swal.fire({
                     title: '가게를 선택해주세요',
                     input: 'select',
-                    inputOptions: { '달인보쌈': '달인보쌈', '미스테리분식': '미스테리분식', '연김밥': '연김밥' },
+                    inputOptions: {
+                        '달인보쌈': '달인보쌈',
+                        '미스테리분식': '미스테리분식',
+                        '연김밥': '연김밥',
+                        '동일로즉석떡볶이': '동일로즉석떡볶이', // 추가됨
+                        '우리동네 첫끼': '우리동네 첫끼'      // 추가됨
+                    },
                     inputPlaceholder: '가게 선택',
                     showCancelButton: false, allowOutsideClick: false
                 });
@@ -98,7 +101,6 @@
             }
             document.getElementById('storeNameBadge').innerText = myStore;
             
-            // 날짜 초기화 (이번 달 1일 ~ 오늘)
             const now = new Date();
             const today = now.toISOString().split('T')[0];
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -119,23 +121,22 @@
             try {
                 const q = query(collection(db, "meal_applications"), 
                     where("store_name", "==", myStore),
-                    where("status", "==", "completed") // 학생이 식사 완료한 것만
+                    where("status", "==", "completed") 
                 );
 
                 const snapshot = await getDocs(q);
                 let list = [];
-                let unpaidSum = 0; // 미정산 합계
-                let unpaidCnt = 0; // 미정산 건수
+                let unpaidSum = 0;
+                let unpaidCnt = 0;
 
                 snapshot.forEach(doc => {
                     const d = doc.data();
                     if (d.date >= start && d.date <= end) {
                         const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
-                        const isUnpaid = (d.is_settled !== true); // true가 아니면 미정산
+                        const isUnpaid = (d.is_settled !== true);
                         
                         list.push({ ...d, ts: ts, isUnpaid: isUnpaid });
 
-                        // 미정산 금액만 합산
                         if (isUnpaid) {
                             unpaidSum += (d.amount || 0);
                             unpaidCnt++;
@@ -143,10 +144,8 @@
                     }
                 });
 
-                // 최신순 정렬
                 list.sort((a, b) => b.ts - a.ts);
 
-                // 상단 요약 업데이트 (미정산 금액만)
                 document.getElementById('unpaidAmount').innerText = unpaidSum.toLocaleString();
                 document.getElementById('unpaidCount').innerText = unpaidCnt;
 
@@ -157,12 +156,9 @@
 
                 tbody.innerHTML = "";
                 list.forEach(item => {
-                    // 상태에 따른 뱃지 표시
                     const statusBadge = item.isUnpaid ? 
                         `<span class="badge-unpaid">미정산</span>` : 
                         `<span class="badge-paid">정산완료</span>`;
-
-                    // 정산완료된 건은 금액을 흐리게 표시 (선택사항)
                     const amountStyle = item.isUnpaid ? "font-weight:bold; color:#c92a2a;" : "color:#adb5bd; text-decoration:line-through;";
 
                     tbody.innerHTML += `
