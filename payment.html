@@ -1,139 +1,104 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>식사 결제 및 인증</title>
+    <title>모바일 식권 결제</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root {
-            --primary: #6C5CE7;
-            --bg-color: #f0f2f5;
-        }
-        
         body {
             font-family: 'Pretendard', sans-serif;
-            background-color: var(--bg-color);
-            margin: 0; padding: 0;
+            background-color: #f8f9fa;
+            margin: 0; padding: 20px;
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh;
         }
-
-        .glass-container {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            width: 90%; max-width: 400px;
-            text-align: center;
+        .container {
+            width: 100%; max-width: 400px;
+            background: white; border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 30px 20px; text-align: center;
         }
-
-        h1 { margin: 10px 0 30px; font-size: 24px; color: #333; }
-
-        .store-badge {
-            background: #e3f2fd; color: #1565c0;
-            font-weight: 800; padding: 8px 16px; border-radius: 20px;
-            display: inline-block; margin-bottom: 15px; font-size: 15px;
+        h2 { color: #333; margin-bottom: 20px; font-weight: 800; }
+        .store-name { color: #6C5CE7; font-size: 1.2rem; margin-bottom: 30px; font-weight: bold; }
+        
+        input {
+            width: 100%; padding: 15px; margin-bottom: 15px;
+            border: 2px solid #eee; border-radius: 12px;
+            font-size: 16px; box-sizing: border-box; transition: 0.2s;
         }
-
-        /* Input Styles */
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #666; font-weight: bold; }
-        .input-field {
-            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px;
-            font-size: 16px; box-sizing: border-box; outline: none; transition: 0.2s;
+        input:focus { border-color: #6C5CE7; outline: none; }
+        
+        .btn-main {
+            width: 100%; padding: 15px;
+            background: #6C5CE7; color: white;
+            border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            transition: 0.2s;
         }
-        .input-field:focus { border-color: var(--primary); }
+        .btn-main:active { transform: scale(0.98); }
 
-        .btn {
-            width: 100%; padding: 16px; border: none; border-radius: 12px;
-            font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.2s;
-            margin-top: 10px;
-        }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(108, 92, 231, 0.4); }
-
-        /* Amount Section Animation */
-        #amountSection { display: none; margin-top: 20px; animation: slideDown 0.4s ease; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Ticket View */
-        #ticketView { display: none; }
+        /* 식권 화면 스타일 */
+        .ticket-view { display: none; }
         .ticket-box {
-            background: linear-gradient(135deg, #6C5CE7, #a29bfe);
-            color: white; padding: 40px 20px; border-radius: 20px;
-            margin-top: 20px; position: relative; overflow: hidden;
-            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.4);
+            border: 2px dashed #6C5CE7; border-radius: 15px;
+            padding: 20px; background: #f3f0ff; margin-top: 20px;
         }
-        .ticket-user { font-size: 22px; font-weight: bold; opacity: 0.9; }
-        .ticket-amount { font-size: 42px; font-weight: 900; margin: 10px 0; text-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .ticket-time { font-size: 13px; background: rgba(0,0,0,0.2); padding: 5px 12px; border-radius: 20px; display: inline-block; }
-
-        /* Loading */
+        .ticket-time { font-size: 2em; font-weight: 900; color: #2d3436; margin: 10px 0; }
+        .ticket-check { font-size: 50px; color: #00b894; margin-bottom: 10px; }
+        
         #loadingOverlay {
             display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); z-index: 9999;
-            justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.9); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column;
         }
         .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary);
+            border: 4px solid #f3f3f3; border-top: 4px solid #6C5CE7;
             border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
 
-    <div id="loadingOverlay"><div class="spinner"></div></div>
+    <div id="loadingOverlay"><div class="spinner"></div><p style="margin-top:10px; font-weight:bold;">처리중...</p></div>
 
-    <div class="glass-container" id="loginView">
-        <div class="store-badge" id="displayStore">식당 확인 중...</div>
-        <h1>청소년 식사 인증</h1>
-
+    <div class="container" id="loginView">
+        <h2>꿈드림 급식 결제</h2>
+        <div class="store-name">현재 식당: <span id="displayStore">로딩중...</span></div>
+        
         <div id="loginSection">
-            <div class="input-group">
-                <label>아이디 (이름+생년월일)</label>
-                <input type="text" id="loginId" class="input-field" placeholder="예: 홍길동080101">
-            </div>
-            <div class="input-group">
-                <label>비밀번호</label>
-                <input type="password" id="loginPw" class="input-field" placeholder="비밀번호 입력">
-            </div>
-            <button class="btn btn-primary" onclick="verifyUser()">인증하기</button>
+            <input type="text" id="loginId" placeholder="아이디 (이름+생년월일6자리)">
+            <input type="password" id="loginPw" placeholder="비밀번호">
+            <button class="btn-main" onclick="verifyUser()">내역 조회</button>
         </div>
 
-        <div id="amountSection">
-            <div style="font-size: 50px; margin-bottom: 10px;">✅</div>
-            <h2 style="color: var(--primary); margin:0;">인증 성공!</h2>
-            <p style="color:#666; font-size: 14px; margin: 10px 0 20px;">식사하신 금액을 입력해주세요.</p>
-
-            <div class="input-group">
-                <input type="tel" id="payAmount" class="input-field" placeholder="금액 입력 (예: 8000)"
-                    style="font-size:24px; text-align:center; font-weight:bold; color:var(--primary); height: 60px;">
-            </div>
-            <button class="btn btn-primary" onclick="processPayment()">결제 확인</button>
+        <div id="amountSection" style="display:none;">
+            <p style="color:#666; font-size:14px; margin-bottom:10px;">식사하신 금액을 입력해주세요</p>
+            <input type="number" id="payAmount" placeholder="금액 입력 (원)" inputmode="numeric">
+            <button class="btn-main" style="background:#00b894;" onclick="processPayment()">결제 하기</button>
         </div>
     </div>
 
-    <div class="glass-container" id="ticketView">
-        <div class="store-badge" id="ticketStoreName"></div>
-        <h2 style="color:#333; margin:0;">결제 완료</h2>
-        <p style="color:#888; font-size:14px;">사장님께 이 화면을 보여주세요.</p>
-
+    <div class="container ticket-view" id="ticketView">
+        <div class="ticket-check">✅</div>
+        <h2>식사 결제 완료</h2>
         <div class="ticket-box">
-            <div class="ticket-user" id="ticketUserName">이름</div>
-            <div class="ticket-amount" id="ticketAmount">0원</div>
-            <div class="ticket-time" id="ticketTime">00:00:00</div>
-            <div style="margin-top: 20px; font-weight: 600;">맛있게 드세요! 😋</div>
-        </div>
+            <div style="font-size:14px; color:#666;">식당명</div>
+            <div id="ticketStoreName" style="font-weight:bold; font-size:18px; margin-bottom:15px;">-</div>
+            
+            <div style="font-size:14px; color:#666;">이용자</div>
+            <div id="ticketUserName" style="font-weight:bold; font-size:18px; margin-bottom:15px;">-</div>
 
-        <button class="btn" style="background:#f1f3f5; color:#555; margin-top:20px;" onclick="location.reload()">돌아가기</button>
+            <div style="font-size:14px; color:#666;">결제 금액</div>
+            <div id="ticketAmount" style="font-weight:bold; font-size:24px; color:#6C5CE7;">0원</div>
+        </div>
+        <div class="ticket-time" id="ticketTime">00:00:00</div>
+        <p style="color:#888; font-size:12px; margin-top:20px;">이 화면을 사장님께 보여주세요.</p>
     </div>
 
-<script type="module">
+    <script type="module">
         import { db, collection, query, where, getDocs, updateDoc, doc, Timestamp } from "./js/firebase-config.js";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -167,7 +132,6 @@
             showLoading(true);
 
             try {
-                // 1. 유저 인증
                 const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
                 const snapshot = await getDocs(q);
                 
@@ -180,7 +144,7 @@
                 const userId = snapshot.docs[0].id;
                 const today = getTodayStr();
 
-                // 2. 신청 내역 조회 (오늘 + 승인된 것)
+                // approved 상태 조회 (키오스크에서 바로 승인됨)
                 const appQ = query(collection(db, "meal_applications"), 
                     where("student_id", "==", userId), 
                     where("date", "==", today),
@@ -190,33 +154,30 @@
 
                 if (appSnap.empty) {
                     showLoading(false);
-                    const pendingQ = query(collection(db, "meal_applications"), where("student_id", "==", userId), where("date", "==", today));
-                    const pendingSnap = await getDocs(pendingQ);
-                    
-                    if(!pendingSnap.empty) return Swal.fire('승인 대기중', '선생님의 승인을 기다려주세요.', 'info');
-                    else return Swal.fire('신청 내역 없음', '먼저 키오스크에서 식사를 신청해주세요.', 'error');
+                    // 이미 결제 완료했는지 체크
+                    const completedQ = query(collection(db, "meal_applications"), 
+                        where("student_id", "==", userId), 
+                        where("date", "==", today),
+                        where("status", "==", "completed")
+                    );
+                    const completedSnap = await getDocs(completedQ);
+
+                    if(!completedSnap.empty) return Swal.fire('사용 완료', '오늘 이미 식사를 하셨습니다.', 'info');
+                    else return Swal.fire('신청 내역 없음', '키오스크에서 먼저 식사를 신청해주세요.', 'error');
                 }
 
                 const appDoc = appSnap.docs[0];
                 const appData = appDoc.data();
-
-                // 3. 중복 사용 체크 (이미 식사완료/정산완료 여부 확인)
-                // is_settled가 아니라 status가 completed인지 확인해야 함 (정산은 나중에 하니까)
-                if (appData.status === 'completed') {
-                    showLoading(false);
-                    return Swal.fire('이미 사용', '이미 사용 처리된 식권입니다.', 'info');
-                }
 
                 if (appData.store_name !== storeName) {
                     showLoading(false);
                     return Swal.fire({
                         icon: 'error',
                         title: '식당 불일치',
-                        html: `신청 내역: <b>${appData.store_name}</b><br>현재 접속: <b>${storeName}</b><br><br>올바른 식당 QR코드를 스캔해주세요.`
+                        html: `신청하신 식당: <b>${appData.store_name}</b><br>현재 접속 식당: <b>${storeName}</b><br><br>올바른 식당 QR코드를 스캔해주세요.`
                     });
                 }
 
-                // 4. 성공 -> 결제창 이동
                 applicationDocId = appDoc.id;
                 showLoading(false);
                 document.getElementById('loginSection').style.display = 'none';
@@ -234,8 +195,8 @@
             if (!amount) return Swal.fire('알림', '금액을 입력해주세요.', 'warning');
 
             const numAmount = Number(amount);
-            if (numAmount > 15000) return Swal.fire('한도 초과', '금액이 너무 큽니다.', 'warning');
-            if (numAmount < 1000) return Swal.fire('금액 오류', '올바른 금액을 입력해주세요.', 'warning');
+            if (numAmount > 30000) return Swal.fire('한도 초과', '금액이 너무 큽니다. 확인해주세요.', 'warning');
+            if (numAmount < 100) return Swal.fire('금액 오류', '올바른 금액을 입력해주세요.', 'warning');
 
             const result = await Swal.fire({
                 title: `${numAmount.toLocaleString()}원`,
@@ -251,11 +212,11 @@
             showLoading(true);
 
             try {
-                // [핵심 수정] is_settled: false로 저장 (선생님이 나중에 정산하기 위해)
+                // 식사 완료 처리 (정산은 나중에)
                 await updateDoc(doc(db, "meal_applications", applicationDocId), {
                     amount: numAmount,
-                    status: 'completed',    // 식사는 완료됨
-                    is_settled: false,      // 돈은 아직 정산 안 됨 (관리자 페이지에 빨간색으로 뜸)
+                    status: 'completed',
+                    is_settled: false,
                     used_at: Timestamp.now()
                 });
 
@@ -280,5 +241,3 @@
     </script>
 </body>
 </html>
-
-
