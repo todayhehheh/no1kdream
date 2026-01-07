@@ -132,6 +132,7 @@
             showLoading(true);
 
             try {
+                // 1. 유저 인증
                 const q = query(collection(db, "users"), where("name", "==", name), where("birth", "==", birth), where("password", "==", pw));
                 const snapshot = await getDocs(q);
                 
@@ -144,7 +145,7 @@
                 const userId = snapshot.docs[0].id;
                 const today = getTodayStr();
 
-                // approved 상태 조회 (키오스크에서 바로 승인됨)
+                // 2. 신청 내역 조회 (오늘 + 승인된 것)
                 const appQ = query(collection(db, "meal_applications"), 
                     where("student_id", "==", userId), 
                     where("date", "==", today),
@@ -154,7 +155,7 @@
 
                 if (appSnap.empty) {
                     showLoading(false);
-                    // 이미 결제 완료했는지 체크
+                    // 혹시 이미 먹었는지 확인
                     const completedQ = query(collection(db, "meal_applications"), 
                         where("student_id", "==", userId), 
                         where("date", "==", today),
@@ -163,12 +164,13 @@
                     const completedSnap = await getDocs(completedQ);
 
                     if(!completedSnap.empty) return Swal.fire('사용 완료', '오늘 이미 식사를 하셨습니다.', 'info');
-                    else return Swal.fire('신청 내역 없음', '키오스크에서 먼저 식사를 신청해주세요.', 'error');
+                    else return Swal.fire('신청 내역 없음', '키오스크에서 먼저 식사를 신청(승인)해주세요.', 'error');
                 }
 
                 const appDoc = appSnap.docs[0];
                 const appData = appDoc.data();
 
+                // 가게 일치 여부 확인
                 if (appData.store_name !== storeName) {
                     showLoading(false);
                     return Swal.fire({
@@ -178,6 +180,7 @@
                     });
                 }
 
+                // 성공 -> 결제창 이동
                 applicationDocId = appDoc.id;
                 showLoading(false);
                 document.getElementById('loginSection').style.display = 'none';
@@ -195,7 +198,10 @@
             if (!amount) return Swal.fire('알림', '금액을 입력해주세요.', 'warning');
 
             const numAmount = Number(amount);
-            if (numAmount > 30000) return Swal.fire('한도 초과', '금액이 너무 큽니다. 확인해주세요.', 'warning');
+            
+            // [수정됨] 10,000원 초과 시 차단
+            if (numAmount > 10000) return Swal.fire('한도 초과', '1회 결제 한도는 10,000원입니다.', 'warning');
+            
             if (numAmount < 100) return Swal.fire('금액 오류', '올바른 금액을 입력해주세요.', 'warning');
 
             const result = await Swal.fire({
@@ -212,7 +218,7 @@
             showLoading(true);
 
             try {
-                // 식사 완료 처리 (정산은 나중에)
+                // 식사 완료 처리
                 await updateDoc(doc(db, "meal_applications", applicationDocId), {
                     amount: numAmount,
                     status: 'completed',
@@ -226,8 +232,10 @@
                 document.getElementById('ticketUserName').innerText = currentUser.name;
                 document.getElementById('ticketAmount').innerText = numAmount.toLocaleString() + "원";
 
+                // 시계 작동
                 const updateTime = () => {
-                    document.getElementById('ticketTime').innerText = new Date().toLocaleTimeString();
+                    const now = new Date();
+                    document.getElementById('ticketTime').innerText = now.toLocaleTimeString();
                 };
                 updateTime();
                 setInterval(updateTime, 1000);
