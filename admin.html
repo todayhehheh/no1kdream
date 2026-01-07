@@ -47,8 +47,8 @@
         .active-dalin { background: #fff9db; color: #f08c00; border-color: #fcc419; }   /* 달인: 노랑 */
         .active-mystery { background: #f3d9fa; color: #be4bdb; border-color: #e599f7; } /* 미스테리: 보라 */
         .active-yeon { background: #e6fcf5; color: #0ca678; border-color: #63e6be; }    /* 연김밥: 초록 */
-        .active-dduk { background: #ffe3e3; color: #e03131; border-color: #ffa8a8; }    /* 떡볶이: 빨강 (신규) */
-        .active-meal { background: #e7f5ff; color: #1c7ed6; border-color: #74c0fc; }    /* 첫끼: 파랑 (신규) */
+        .active-dduk { background: #ffe3e3; color: #e03131; border-color: #ffa8a8; }    /* 떡볶이: 빨강 */
+        .active-meal { background: #e7f5ff; color: #1c7ed6; border-color: #74c0fc; }    /* 첫끼: 파랑 */
 
         .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 12px; }
         .filter-bar label { font-size: 14px; font-weight: bold; color: #495057; }
@@ -122,7 +122,9 @@
                     <option value="달인보쌈">달인보쌈</option>
                     <option value="미스테리분식">미스테리분식</option>
                     <option value="연김밥">연김밥</option>
-                    <option value="동일로즉석떡볶이">동일로즉석떡볶이</option> <option value="우리동네 첫끼">우리동네 첫끼</option>      </select>
+                    <option value="동일로즉석떡볶이">동일로즉석떡볶이</option>
+                    <option value="우리동네 첫끼">우리동네 첫끼</option>
+                </select>
                 <label>상태:</label><select id="settleStatus">
                     <option value="all">전체</option>
                     <option value="no">❌ 미정산</option>
@@ -138,7 +140,7 @@
                 <span style="color:#e03131">미정산(지급예정): <span id="sumUnpaid">0</span></span>
             </div>
             <table id="settleTable">
-                <thead><tr><th>날짜</th> <th>이름 (생년월일)</th> <th>업체</th> <th>금액</th> <th>정산상태</th></tr></thead>
+                <thead><tr><th>날짜</th> <th>이름 (생년월일)</th> <th>업체</th> <th>금액</th> <th>정산/관리</th></tr></thead>
                 <tbody id="settleBody"></tbody>
             </table>
         </div>
@@ -277,8 +279,8 @@
                         const cD = store === '달인보쌈' ? 'active-dalin' : '';
                         const cM = store === '미스테리분식' ? 'active-mystery' : '';
                         const cY = store === '연김밥' ? 'active-yeon' : '';
-                        const cT = store === '동일로즉석떡볶이' ? 'active-dduk' : ''; // 떡볶이
-                        const cW = store === '우리동네 첫끼' ? 'active-meal' : '';      // 첫끼
+                        const cT = store === '동일로즉석떡볶이' ? 'active-dduk' : ''; 
+                        const cW = store === '우리동네 첫끼' ? 'active-meal' : '';
 
                         buttonsHtml = `<div class="store-toggles">
                             <button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button>
@@ -288,7 +290,6 @@
                             <button class="toggle-btn ${cW}" onclick="changeStore('${appId}', '우리동네 첫끼')">첫끼</button>
                         </div>`;
                     } else {
-                        // 신청 내역 없을 때 (강제 승인)
                         buttonsHtml = `<div class="store-toggles">
                             <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button>
                             <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button>
@@ -331,7 +332,7 @@
             }
         };
 
-        // --- Tab 2: 정산 관리 ---
+        // --- Tab 2: 정산 관리 (수정/삭제 추가됨) ---
         window.loadSettlementData = async () => {
             showLoading(true);
             const start = document.getElementById('settleStart').value;
@@ -373,16 +374,20 @@
 
                 tbody.innerHTML = list.length ? "" : "<tr><td colspan='5'>내역 없음</td></tr>";
                 list.forEach(item => {
-                    const btn = item.isSettled ? 
+                    const btnToggle = item.isSettled ? 
                         `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">🟢 정산완료</button>` : 
-                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`; 
+                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`;
+                    
+                    // [추가됨] 수정/삭제 버튼
+                    const btnEdit = `<button class="btn-small btn-blue" onclick="editSettlement('${item.id}', '${item.price}', '${item.store_name}')" style="margin-left:5px;">✏️</button>`;
+                    const btnDel = `<button class="btn-small btn-red" onclick="deleteSettlement('${item.id}')" style="margin-left:2px;">🗑️</button>`;
                     
                     tbody.innerHTML += `<tr>
                         <td>${item.date}</td>
                         <td>${item.uName} <span style="font-size:12px;color:#888;">(${item.uBirth})</span></td>
                         <td>${item.store_name}</td>
                         <td>${item.price.toLocaleString()}원</td>
-                        <td>${btn}</td>
+                        <td>${btnToggle} ${btnEdit} ${btnDel}</td>
                     </tr>`;
                 });
             } catch(e) { console.error(e); }
@@ -393,6 +398,50 @@
             if(confirm("정산 상태를 변경하시겠습니까?")) {
                 await updateDoc(doc(db, "meal_applications", id), { is_settled: state });
                 loadSettlementData();
+            }
+        };
+
+        // [신규 기능] 정산 내역 삭제
+        window.deleteSettlement = async (id) => {
+            if(confirm("정말 이 내역을 삭제하시겠습니까? (복구 불가)")) {
+                showLoading(true);
+                await deleteDoc(doc(db, "meal_applications", id));
+                showLoading(false);
+                loadSettlementData();
+            }
+        };
+
+        // [신규 기능] 정산 내역 수정 (금액 및 가게)
+        window.editSettlement = async (id, oldPrice, oldStore) => {
+            const { value: formValues } = await Swal.fire({
+                title: '정산 내역 수정',
+                html:
+                    `<div>금액 수정</div><input id="swal-edit-price" class="swal2-input" type="number" value="${oldPrice}">` +
+                    `<div>가게 수정</div><select id="swal-edit-store" class="swal2-input">` +
+                    `<option value="달인보쌈" ${oldStore==='달인보쌈'?'selected':''}>달인보쌈</option>` +
+                    `<option value="미스테리분식" ${oldStore==='미스테리분식'?'selected':''}>미스테리분식</option>` +
+                    `<option value="연김밥" ${oldStore==='연김밥'?'selected':''}>연김밥</option>` +
+                    `<option value="동일로즉석떡볶이" ${oldStore==='동일로즉석떡볶이'?'selected':''}>동일로즉석떡볶이</option>` +
+                    `<option value="우리동네 첫끼" ${oldStore==='우리동네 첫끼'?'selected':''}>우리동네 첫끼</option>` +
+                    `</select>`,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-edit-price').value,
+                        document.getElementById('swal-edit-store').value
+                    ]
+                }
+            });
+
+            if (formValues) {
+                const newPrice = Number(formValues[0]);
+                const newStore = formValues[1];
+                showLoading(true);
+                await updateDoc(doc(db, "meal_applications", id), { amount: newPrice, store_name: newStore });
+                showLoading(false);
+                loadSettlementData();
+                Swal.fire("수정 완료", "", "success");
             }
         };
 
