@@ -38,17 +38,15 @@
         .badge-blue { background: #e7f5ff; color: #1971c2; }
         .badge-green { background: #ebfbee; color: #2f9e44; }
         
-        /* 가게 버튼 스타일 (5개 대응) */
         .store-toggles { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
         .toggle-btn { padding: 6px 8px; border: 1px solid #dee2e6; background: white; color: #adb5bd; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; margin-bottom: 2px; }
         .toggle-btn:hover { background: #f8f9fa; }
         
-        /* 활성화된 가게 색상 */
-        .active-dalin { background: #fff9db; color: #f08c00; border-color: #fcc419; }   /* 달인: 노랑 */
-        .active-mystery { background: #f3d9fa; color: #be4bdb; border-color: #e599f7; } /* 미스테리: 보라 */
-        .active-yeon { background: #e6fcf5; color: #0ca678; border-color: #63e6be; }    /* 연김밥: 초록 */
-        .active-dduk { background: #ffe3e3; color: #e03131; border-color: #ffa8a8; }    /* 떡볶이: 빨강 */
-        .active-meal { background: #e7f5ff; color: #1c7ed6; border-color: #74c0fc; }    /* 첫끼: 파랑 */
+        .active-dalin { background: #fff9db; color: #f08c00; border-color: #fcc419; }
+        .active-mystery { background: #f3d9fa; color: #be4bdb; border-color: #e599f7; }
+        .active-yeon { background: #e6fcf5; color: #0ca678; border-color: #63e6be; }
+        .active-dduk { background: #ffe3e3; color: #e03131; border-color: #ffa8a8; }
+        .active-meal { background: #e7f5ff; color: #1c7ed6; border-color: #74c0fc; }
 
         .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 12px; }
         .filter-bar label { font-size: 14px; font-weight: bold; color: #495057; }
@@ -58,6 +56,21 @@
         @media (max-width: 800px) { .ad-setting-box { grid-template-columns: 1fr; } }
         .ad-card { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; }
         
+        /* [신규] 선결제 잔액 관리 박스 */
+        .balance-manage-box { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; 
+        }
+        @media (max-width: 1000px) { .balance-manage-box { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) { .balance-manage-box { grid-template-columns: repeat(2, 1fr); } }
+
+        .balance-item { 
+            background: white; border: 1px solid #dee2e6; border-radius: 12px; padding: 15px; 
+            text-align: center; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .balance-item:hover { transform: translateY(-3px); border-color: #6C5CE7; }
+        .balance-store { font-size: 14px; color: #868e96; font-weight: bold; margin-bottom: 5px; }
+        .balance-value { font-size: 18px; color: #212529; font-weight: 900; }
+
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #495057; }
         .input-field { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; }
@@ -115,6 +128,11 @@
         </div>
 
         <div id="tab-settlement" class="table-box" style="display:none;">
+            <h3 style="margin-bottom:10px; color:#495057;">💳 가게별 선결제 잔액 관리 (클릭하여 수정)</h3>
+            <div class="balance-manage-box" id="balanceBox">
+                <div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">잔액 로딩 중...</div>
+            </div>
+
             <div class="filter-bar">
                 <label>기간:</label><input type="date" id="settleStart"> ~ <input type="date" id="settleEnd">
                 <label>업체:</label><select id="settleStore">
@@ -213,6 +231,8 @@
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         };
 
+        const STORE_LIST = ['달인보쌈', '미스테리분식', '연김밥', '동일로즉석떡볶이', '우리동네 첫끼'];
+
         window.onload = async () => {
             const { value: inputPw } = await Swal.fire({
                 title: '관리자 접속', input: 'password', inputPlaceholder: '비밀번호를 입력하세요',
@@ -233,6 +253,54 @@
             });
 
             loadAllUsersAndApps();
+        };
+
+        // --- [신규 기능] 가게별 선결제 잔액 관리 ---
+        window.loadStoreBalances = async () => {
+            const box = document.getElementById('balanceBox');
+            box.innerHTML = '';
+            
+            // 5개 가게에 대해 각각 DB 조회
+            for (const store of STORE_LIST) {
+                let balance = 0;
+                try {
+                    const docRef = doc(db, "stores", store);
+                    const docSnap = await getDoc(docRef);
+                    if(docSnap.exists()) balance = docSnap.data().balance || 0;
+                } catch(e) { console.error(e); }
+
+                box.innerHTML += `
+                    <div class="balance-item" onclick="updateStoreBalance('${store}', ${balance})">
+                        <div class="balance-store">${store}</div>
+                        <div class="balance-value" style="color:${balance < 0 ? 'red':'#212529'}">${balance.toLocaleString()}원</div>
+                    </div>
+                `;
+            }
+        };
+
+        window.updateStoreBalance = async (storeName, currentBalance) => {
+            const { value: newAmount } = await Swal.fire({
+                title: `${storeName} 잔액 수정`,
+                input: 'number',
+                inputValue: currentBalance,
+                text: '현재 선결제 잔액을 입력하세요.',
+                showCancelButton: true
+            });
+
+            if (newAmount !== null && newAmount !== "") {
+                try {
+                    showLoading(true);
+                    // stores 컬렉션에 저장 (문서 ID를 가게 이름으로 사용)
+                    await setDoc(doc(db, "stores", storeName), { balance: Number(newAmount) }, { merge: true });
+                    showLoading(false);
+                    Swal.fire("수정 완료", "잔액이 업데이트되었습니다.", "success");
+                    loadStoreBalances(); // 새로고침
+                } catch(e) {
+                    showLoading(false);
+                    console.error(e);
+                    Swal.fire("오류", "저장 실패", "error");
+                }
+            }
         };
 
         // --- Tab 1: 회원 및 급식 관리 ---
@@ -267,7 +335,6 @@
                     let statusText = `<span style="color:#ccc;">-</span>`;
                     let buttonsHtml = '';
 
-                    // [수정됨] 5개 업체 대응 버튼 로직
                     if (activeApp) {
                         const store = activeApp.store_name;
                         const status = activeApp.status;
@@ -332,7 +399,7 @@
             }
         };
 
-        // --- Tab 2: 정산 관리 (수정/삭제 추가됨) ---
+        // --- Tab 2: 정산 관리 ---
         window.loadSettlementData = async () => {
             showLoading(true);
             const start = document.getElementById('settleStart').value;
@@ -378,7 +445,6 @@
                         `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">🟢 정산완료</button>` : 
                         `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`;
                     
-                    // [추가됨] 수정/삭제 버튼
                     const btnEdit = `<button class="btn-small btn-blue" onclick="editSettlement('${item.id}', '${item.price}', '${item.store_name}')" style="margin-left:5px;">✏️</button>`;
                     const btnDel = `<button class="btn-small btn-red" onclick="deleteSettlement('${item.id}')" style="margin-left:2px;">🗑️</button>`;
                     
@@ -401,7 +467,6 @@
             }
         };
 
-        // [신규 기능] 정산 내역 삭제
         window.deleteSettlement = async (id) => {
             if(confirm("정말 이 내역을 삭제하시겠습니까? (복구 불가)")) {
                 showLoading(true);
@@ -411,18 +476,13 @@
             }
         };
 
-        // [신규 기능] 정산 내역 수정 (금액 및 가게)
         window.editSettlement = async (id, oldPrice, oldStore) => {
             const { value: formValues } = await Swal.fire({
                 title: '정산 내역 수정',
                 html:
                     `<div>금액 수정</div><input id="swal-edit-price" class="swal2-input" type="number" value="${oldPrice}">` +
                     `<div>가게 수정</div><select id="swal-edit-store" class="swal2-input">` +
-                    `<option value="달인보쌈" ${oldStore==='달인보쌈'?'selected':''}>달인보쌈</option>` +
-                    `<option value="미스테리분식" ${oldStore==='미스테리분식'?'selected':''}>미스테리분식</option>` +
-                    `<option value="연김밥" ${oldStore==='연김밥'?'selected':''}>연김밥</option>` +
-                    `<option value="동일로즉석떡볶이" ${oldStore==='동일로즉석떡볶이'?'selected':''}>동일로즉석떡볶이</option>` +
-                    `<option value="우리동네 첫끼" ${oldStore==='우리동네 첫끼'?'selected':''}>우리동네 첫끼</option>` +
+                    STORE_LIST.map(s => `<option value="${s}" ${oldStore===s?'selected':''}>${s}</option>`).join('') +
                     `</select>`,
                 focusConfirm: false,
                 showCancelButton: true,
@@ -445,19 +505,17 @@
             }
         };
 
-        // --- Tab 3,4,5,6 & Utils (기존 기능 유지) ---
-        window.loadRecords = async () => { /* ... 기존과 동일 ... */ 
+        // --- Tab 3,4,5,6 & Utils (기존 유지) ---
+        window.loadRecords = async () => { /* ... */ 
             showLoading(true);
             const start = document.getElementById('recStart').value;
             const end = document.getElementById('recEnd').value;
             const filterAct = document.getElementById('recActivity').value;
             const tbody = document.getElementById('recBody');
-            
             try {
                 let userMap = {};
                 const uSnap = await getDocs(collection(db, "users"));
                 uSnap.forEach(d => userMap[d.id] = d.data());
-
                 let records = [];
                 const add = (snap, type) => snap.forEach(d => {
                     const data = d.data();
@@ -470,7 +528,6 @@
                         records.push({ date: data.date, name: u.name, birth: u.birth, act: actName, ts: ts });
                     }
                 });
-
                 const [attSnap, mealSnap, snackSnap] = await Promise.all([
                     getDocs(query(collection(db, "attendance"))),
                     getDocs(query(collection(db, "meal_applications"))),
@@ -478,82 +535,16 @@
                 ]);
                 add(attSnap, 'attendance'); add(mealSnap, 'meal'); add(snackSnap, 'snack');
                 records.sort((a,b) => b.ts - a.ts);
-
                 tbody.innerHTML = records.length ? "" : "<tr><td colspan='3'>기록 없음</td></tr>";
                 records.forEach(r => tbody.innerHTML += `<tr><td>${r.name} <span style="font-size:12px;color:#888;">(${r.birth})</span></td><td>${r.date}</td><td>${r.act}</td></tr>`);
             } catch(e) { console.error(e); }
             showLoading(false);
         };
 
-        window.loadAds = async () => {
-            try {
-                const docSnap = await getDoc(doc(db, "settings", "ads"));
-                if(docSnap.exists()) {
-                    const d = docSnap.data();
-                    document.getElementById('ad1Img').value = d.ad1_img || ""; document.getElementById('ad1Link').value = d.ad1_link || "";
-                    document.getElementById('ad2Img').value = d.ad2_img || ""; document.getElementById('ad2Link').value = d.ad2_link || "";
-                    document.getElementById('ad3Img').value = d.ad3_img || ""; document.getElementById('ad3Link').value = d.ad3_link || "";
-                }
-            } catch(e) {}
-        };
-        window.saveAds = async () => {
-            await setDoc(doc(db, "settings", "ads"), {
-                ad1_img: document.getElementById('ad1Img').value, ad1_link: document.getElementById('ad1Link').value,
-                ad2_img: document.getElementById('ad2Img').value, ad2_link: document.getElementById('ad2Link').value,
-                ad3_img: document.getElementById('ad3Img').value, ad3_link: document.getElementById('ad3Link').value
-            });
-            Swal.fire("저장 완료", "키오스크에 즉시 반영됩니다.", "success");
-        };
-
-        window.loadEducationStats = async () => {
-            showLoading(true);
-            const tbody = document.getElementById('eduBody');
-            const searchName = document.getElementById('eduSearchName').value.trim();
-            const start = document.getElementById('eduStart').value;
-            const end = document.getElementById('eduEnd').value;
-            try {
-                const q = query(collection(db, "education_records"), orderBy("timestamp", "desc"));
-                const querySnapshot = await getDocs(q);
-                let records = [];
-                querySnapshot.forEach(doc => {
-                    const d = doc.data();
-                    if (d.date < start || d.date > end) return;
-                    if (searchName && !d.student_name.includes(searchName)) return;
-                    records.push(d);
-                });
-                tbody.innerHTML = records.length ? "" : "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>";
-                records.forEach(d => { tbody.innerHTML += `<tr><td>${d.date}</td><td>${d.student_name}</td><td>${d.student_birth || '-'}</td><td><span class="badge badge-blue">${d.category}</span></td><td style="text-align:left; padding-left:15px;">${d.video_title}</td></tr>`; });
-            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; }
-            showLoading(false);
-        };
-
-        window.loadSnackStats = async () => {
-            showLoading(true);
-            const tbody = document.getElementById('snackBody');
-            const searchName = document.getElementById('snackSearchName').value.trim();
-            const start = document.getElementById('snackStart').value;
-            const end = document.getElementById('snackEnd').value;
-            try {
-                let userMap = {};
-                const uSnap = await getDocs(collection(db, "users"));
-                uSnap.forEach(d => userMap[d.id] = d.data());
-                const q = query(collection(db, "snacks"));
-                const querySnapshot = await getDocs(q);
-                let list = [];
-                querySnapshot.forEach(doc => {
-                    const d = doc.data();
-                    if (d.date < start || d.date > end) return;
-                    if (searchName && !d.student_name.includes(searchName)) return;
-                    const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime();
-                    const u = userMap[d.student_id] || { birth: '-' };
-                    list.push({ ...d, ts: ts, birth: u.birth });
-                });
-                list.sort((a, b) => b.ts - a.ts);
-                tbody.innerHTML = list.length ? "" : "<tr><td colspan='4'>조회된 내역이 없습니다.</td></tr>";
-                list.forEach(item => { tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.birth}</td><td>${item.item || '간식'}</td></tr>`; });
-            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>로딩 실패</td></tr>"; }
-            showLoading(false);
-        };
+        window.loadAds = async () => { /* ... */ try { const docSnap = await getDoc(doc(db, "settings", "ads")); if(docSnap.exists()) { const d = docSnap.data(); document.getElementById('ad1Img').value = d.ad1_img || ""; document.getElementById('ad1Link').value = d.ad1_link || ""; document.getElementById('ad2Img').value = d.ad2_img || ""; document.getElementById('ad2Link').value = d.ad2_link || ""; document.getElementById('ad3Img').value = d.ad3_img || ""; document.getElementById('ad3Link').value = d.ad3_link || ""; } } catch(e) {} };
+        window.saveAds = async () => { /* ... */ await setDoc(doc(db, "settings", "ads"), { ad1_img: document.getElementById('ad1Img').value, ad1_link: document.getElementById('ad1Link').value, ad2_img: document.getElementById('ad2Img').value, ad2_link: document.getElementById('ad2Link').value, ad3_img: document.getElementById('ad3Img').value, ad3_link: document.getElementById('ad3Link').value }); Swal.fire("저장 완료", "키오스크에 즉시 반영됩니다.", "success"); };
+        window.loadEducationStats = async () => { /* ... */ showLoading(true); const tbody = document.getElementById('eduBody'); const searchName = document.getElementById('eduSearchName').value.trim(); const start = document.getElementById('eduStart').value; const end = document.getElementById('eduEnd').value; try { const q = query(collection(db, "education_records"), orderBy("timestamp", "desc")); const querySnapshot = await getDocs(q); let records = []; querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; records.push(d); }); tbody.innerHTML = records.length ? "" : "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>"; records.forEach(d => { tbody.innerHTML += `<tr><td>${d.date}</td><td>${d.student_name}</td><td>${d.student_birth || '-'}</td><td><span class="badge badge-blue">${d.category}</span></td><td style="text-align:left; padding-left:15px;">${d.video_title}</td></tr>`; }); } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; } showLoading(false); };
+        window.loadSnackStats = async () => { /* ... */ showLoading(true); const tbody = document.getElementById('snackBody'); const searchName = document.getElementById('snackSearchName').value.trim(); const start = document.getElementById('snackStart').value; const end = document.getElementById('snackEnd').value; try { let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data()); const q = query(collection(db, "snacks")); const querySnapshot = await getDocs(q); let list = []; querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime(); const u = userMap[d.student_id] || { birth: '-' }; list.push({ ...d, ts: ts, birth: u.birth }); }); list.sort((a, b) => b.ts - a.ts); tbody.innerHTML = list.length ? "" : "<tr><td colspan='4'>조회된 내역이 없습니다.</td></tr>"; list.forEach(item => { tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.birth}</td><td>${item.item || '간식'}</td></tr>`; }); } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>로딩 실패</td></tr>"; } showLoading(false); };
 
         window.switchTab = (tabName) => {
             document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
@@ -561,8 +552,9 @@
             document.getElementById(`tab-${tabName}`).style.display = 'block';
             const idx = ['users','settlement','records','ads','education','snacks'].indexOf(tabName);
             if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+            
             if(tabName==='users') loadAllUsersAndApps();
-            if(tabName==='settlement') loadSettlementData();
+            if(tabName==='settlement') { loadSettlementData(); loadStoreBalances(); } // [수정] 잔액도 함께 로드
             if(tabName==='records') loadRecords();
             if(tabName==='ads') loadAds(); 
             if(tabName==='education') loadEducationStats(); 
@@ -573,7 +565,7 @@
             const activeTabBtn = document.querySelector('.tab-btn.active');
             if (activeTabBtn) {
                 const idx = Array.from(document.querySelectorAll('.tab-btn')).indexOf(activeTabBtn);
-                if (idx === 0) loadAllUsersAndApps(); else if (idx === 1) loadSettlementData(); else if (idx === 2) loadRecords(); else if (idx === 3) loadAds(); else if (idx === 4) loadEducationStats(); else if (idx === 5) loadSnackStats();
+                if (idx === 0) loadAllUsersAndApps(); else if (idx === 1) { loadSettlementData(); loadStoreBalances(); } else if (idx === 2) loadRecords(); else if (idx === 3) loadAds(); else if (idx === 4) loadEducationStats(); else if (idx === 5) loadSnackStats();
                 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
                 Toast.fire({ icon: 'success', title: '새로고침 완료' });
             }
@@ -585,38 +577,9 @@
         window.changePw = async (userId) => { const { value: np } = await Swal.fire({ title: '새 비밀번호', input: 'text', showCancelButton: true }); if (np) { await updateDoc(doc(db, "users", userId), { password: np }); Swal.fire('완료', '변경되었습니다.', 'success'); } };
         window.deleteUser = async (userId, name) => { if(confirm(`${name} 회원을 삭제하시겠습니까?`)) { await deleteDoc(doc(db, "users", userId)); loadAllUsersAndApps(); } };
         window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
-        window.generateSettlementPDF = () => {
-            const zone = document.getElementById('hidden-print-zone');
-            const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value;
-            const storeSelect = document.getElementById('settleStore'); const store = storeSelect.options[storeSelect.selectedIndex].text;
-            const count = document.getElementById('sumCount').innerText; const price = document.getElementById('sumPrice').innerText; const unpaid = document.getElementById('sumUnpaid').innerText;
-            const originalTable = document.getElementById('settleTable').cloneNode(true);
-            originalTable.className = "report-table";
-            originalTable.querySelectorAll('tr').forEach(row => { const cells = row.querySelectorAll('th, td'); if (cells.length > 0) cells[cells.length - 1].remove(); });
-            zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-sub">기간: ${start} ~ ${end} | 업체: ${store}</div></div><div class="report-summary-box"><div>총 건수: ${count}</div><div>총 매출: ${price}</div><div style="color:#c62828">미지급액: ${unpaid}</div></div>`;
-            zone.appendChild(originalTable);
-            downloadPDFFromElement(zone, `정산내역서_${start}`);
-        };
-        window.generateRecordPDF = () => {
-            const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('recStart').value;
-            const originalTable = document.getElementById('recordTable').cloneNode(true); originalTable.className = "report-table";
-            zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-sub">기간: ${start} ~ ...</div></div>`;
-            zone.appendChild(originalTable);
-            downloadPDFFromElement(zone, `활동기록부_${start}`);
-        };
-        function downloadPDFFromElement(element, fileName) {
-            showLoading(true); element.style.opacity = 1; 
-            setTimeout(() => {
-                html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png'); const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                    const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth / canvas.width) || 20;
-                    let heightLeft = imgHeight; let position = 0;
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight;
-                    while (heightLeft > 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; }
-                    pdf.save(fileName + ".pdf"); element.innerHTML = ""; element.style.opacity = 0; showLoading(false);
-                }).catch(err => { console.error(err); alert("PDF 생성 오류"); element.style.opacity = 0; showLoading(false); });
-            }, 500);
-        }
+        window.generateSettlementPDF = () => { /* ... */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value; const storeSelect = document.getElementById('settleStore'); const store = storeSelect.options[storeSelect.selectedIndex].text; const count = document.getElementById('sumCount').innerText; const price = document.getElementById('sumPrice').innerText; const unpaid = document.getElementById('sumUnpaid').innerText; const originalTable = document.getElementById('settleTable').cloneNode(true); originalTable.className = "report-table"; originalTable.querySelectorAll('tr').forEach(row => { const cells = row.querySelectorAll('th, td'); if (cells.length > 0) cells[cells.length - 1].remove(); }); zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-sub">기간: ${start} ~ ${end} | 업체: ${store}</div></div><div class="report-summary-box"><div>총 건수: ${count}</div><div>총 매출: ${price}</div><div style="color:#c62828">미지급액: ${unpaid}</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `정산내역서_${start}`); };
+        window.generateRecordPDF = () => { /* ... */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('recStart').value; const originalTable = document.getElementById('recordTable').cloneNode(true); originalTable.className = "report-table"; zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-sub">기간: ${start} ~ ...</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `활동기록부_${start}`); };
+        function downloadPDFFromElement(element, fileName) { showLoading(true); element.style.opacity = 1; setTimeout(() => { html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jspdf.jsPDF('p', 'mm', 'a4'); const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth / canvas.width) || 20; let heightLeft = imgHeight; let position = 0; pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; while (heightLeft > 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; } pdf.save(fileName + ".pdf"); element.innerHTML = ""; element.style.opacity = 0; showLoading(false); }).catch(err => { console.error(err); alert("PDF 생성 오류"); element.style.opacity = 0; showLoading(false); }); }, 500); }
     </script>
 </body>
 </html>
