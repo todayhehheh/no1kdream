@@ -267,7 +267,7 @@
                         <div class="meal-img-box" style="background-image: url('https://lh6.googleusercontent.com/proxy/fg-7Jv4MQ5BhHB_TKyR5FMtR7ml9_IArZWnH7NYgJgG2JfmPIUjUOHkERnJ9hMvscTsPLoOMauUHll4ZndknzFoREYeY9ipZwjCDkDo9-sZfX8V_jnk6PIqX9KG_8GFgUZxsuoh7TA');"></div>
                         <div class="meal-info">
                             <span class="meal-name">달인보쌈</span>
-                            <span class="meal-desc">든든한 보쌈 정식 11:30~18:00 월 휴무</span>
+                            <span class="meal-desc">든든한 보쌈 정식</span>
                         </div>
                     </button>
 
@@ -275,7 +275,7 @@
                         <div class="meal-img-box" style="background-image: url('https://cdn.e2news.com/news/photo/201511/85026_37781_5340.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">미스테리</span>
-                            <span class="meal-desc">떡볶이와 튀김 10:30~18:00</span>
+                            <span class="meal-desc">떡볶이와 튀김</span>
                         </div>
                     </button>
 
@@ -283,23 +283,23 @@
                         <div class="meal-img-box" style="background-image: url('https://newsimg.sedaily.com/2025/01/14/2GNOXAIO35_1.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">연김밥</span>
-                            <span class="meal-desc">신선한 재료 김밥 9:00~18:00 월 휴무</span>
+                            <span class="meal-desc">신선한 재료 김밥</span>
                         </div>
                     </button>
 
                     <button class="meal-card-btn" onclick="openCombinedModal('meal', '동일로즉석떡볶이')">
-                        <div class="meal-img-box" style="background-image: url('https://cookpick.kr/wp-content/uploads/2025/10/Gemini_Generated_Image_xd49qfxd49qfxd49.webp');"></div>
+                        <div class="meal-img-box" style="background-image: url('https://placehold.co/100x100/FF7675/white?text=Topokki');"></div>
                         <div class="meal-info">
                             <span class="meal-name">동일로떡볶이</span>
-                            <span class="meal-desc">즉석 떡볶이 맛집 11:00~18:00</span>
+                            <span class="meal-desc">즉석 떡볶이 맛집</span>
                         </div>
                     </button>
 
                     <button class="meal-card-btn" onclick="openCombinedModal('meal', '우리동네 첫끼')">
-                        <div class="meal-img-box" style="background-image: url('https://image.8dogam.com/resized/product/asset/v1/upload/66164192ccc94c25b8358d1242731186.jpg?type=big&res=2x&ext=webp');"></div>
+                        <div class="meal-img-box" style="background-image: url('https://placehold.co/100x100/6C5CE7/white?text=Meal');"></div>
                         <div class="meal-info">
                             <span class="meal-name">우리동네 첫끼</span>
-                            <span class="meal-desc">샌드위치와 샐러드 9:00~14:00</span>
+                            <span class="meal-desc">든든한 한끼 식사</span>
                         </div>
                     </button>
                 </div>
@@ -379,15 +379,17 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- 모달 로직 ---
+        // --- [수정된 부분] 튜토리얼 모달 로직 (이미지로 대체) ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
-                html: `<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius:15px;">
-                        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
-                        src="https://www.youtube.com/embed/IWwxdhD54uU?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                    </div>`,
-                showCloseButton: true, showConfirmButton: false, width: 700, padding: '20px'
+                // 유튜브 영상 iframe을 제거하고 img 태그로 변경
+                // 주의: 아래 src 경로에 있는 파일명(tutorial.png)이 폴더에 있는 파일명과 정확히 일치해야 합니다.
+                html: `<img src="./tutorial.png" style="width: 100%; height: auto; border-radius: 10px; display: block;" alt="급식 튜토리얼 이미지">`,
+                showCloseButton: true, 
+                showConfirmButton: false, 
+                width: 700, 
+                padding: '20px'
             });
         };
 
@@ -489,5 +491,3 @@
     </script>
 </body>
 </html>
-
-
