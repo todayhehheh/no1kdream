@@ -6,6 +6,8 @@
     <title>노원구 꿈드림 - 센터 키오스크</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/inko@1.1.1/inko.min.js"></script>
+
     <style>
         :root {
             --primary: #6C5CE7;
@@ -139,8 +141,8 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr; 
-            grid-template-rows: repeat(5, 1fr); /* [수정] 4단 -> 5단 변경 */
-            gap: 12px; /* [수정] 5개라서 간격을 조금 줄임 */
+            grid-template-rows: repeat(5, 1fr); 
+            gap: 12px; 
         }
         
         .meal-card-btn {
@@ -157,14 +159,14 @@
         .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
         
         .meal-img-box {
-            width: 100px; /* [수정] 5단에 맞춰 이미지 크기 살짝 조정 */
+            width: 100px; 
             height: 100%;
             background-color: #eee;
             background-size: cover; background-position: center;
             flex-shrink: 0; 
         }
         .meal-info {
-            padding: 0 15px; /* [수정] 패딩 조정 */
+            padding: 0 15px; 
             flex: 1;
         }
         .meal-name { font-size: 18px; font-weight: 800; color: #495057; display: block; margin-bottom: 2px; }
@@ -267,7 +269,7 @@
                         <div class="meal-img-box" style="background-image: url('https://lh6.googleusercontent.com/proxy/fg-7Jv4MQ5BhHB_TKyR5FMtR7ml9_IArZWnH7NYgJgG2JfmPIUjUOHkERnJ9hMvscTsPLoOMauUHll4ZndknzFoREYeY9ipZwjCDkDo9-sZfX8V_jnk6PIqX9KG_8GFgUZxsuoh7TA');"></div>
                         <div class="meal-info">
                             <span class="meal-name">달인보쌈</span>
-                            <span class="meal-desc">든든한 보쌈 정식 11:30~18:00(월휴무, 브레이크타임14:30~16:30)</span>
+                            <span class="meal-desc">든든한 보쌈 정식 11:30~18:00(월휴무, 브레이크타임 14:30~16:30)</span>
                         </div>
                     </button>
 
@@ -311,6 +313,9 @@
     <script type="module">
         import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
+        // [중요] 한영 자동 변환기 초기화
+        const inko = new Inko();
+
         const getTodayStr = () => {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -320,7 +325,6 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         };
 
-        // --- [핵심] 구글 드라이브 링크 자동 변환 (thumbnail 방식) ---
         const convertToDirectLink = (url) => {
             if (!url) return "";
             const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
@@ -379,12 +383,10 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- [수정된 부분] 튜토리얼 모달 로직 (이미지로 대체) ---
+        // --- [수정] 튜토리얼 (이미지) ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
-                // 유튜브 영상 iframe을 제거하고 img 태그로 변경
-                // 주의: 아래 src 경로에 있는 파일명(tutorial.png)이 폴더에 있는 파일명과 정확히 일치해야 합니다.
                 html: `<img src="./tutorial.png" style="width: 100%; height: auto; border-radius: 10px; display: block;" alt="급식 튜토리얼 이미지">`,
                 showCloseButton: true, 
                 showConfirmButton: false, 
@@ -393,16 +395,22 @@
             });
         };
 
-        // --- [수정된 부분] 회원가입 모달 (이름: 한글만) ---
+        // --- [수정] 회원가입 (한영 자동변환) ---
         window.openRegisterModal = async () => {
             const { value: formValues } = await Swal.fire({
                 title: '회원가입',
-                // 이름 입력란에 oninput 추가하여 한글 이외 제거
-                html: '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)" oninput="this.value = this.value.replace(/[^가-힣]/g, \'\')">' +
+                html: '<input id="swal-name" class="swal2-input" placeholder="이름 (예: 홍길동)">' +
                       '<input id="swal-birth" class="swal2-input" type="tel" maxlength="6" placeholder="생년월일 (예: 080101)">' +
                       '<input id="swal-pw" class="swal2-input" type="password" placeholder="비밀번호 설정">' +
                       '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
                 focusConfirm: false, showCancelButton: true, confirmButtonText: '가입하기',
+                didOpen: () => {
+                    // [중요] 입력 시 영어 -> 한글 자동 변환 로직
+                    const nameInput = document.getElementById('swal-name');
+                    nameInput.addEventListener('input', function() {
+                        this.value = inko.en2ko(this.value); // 입력된 값을 즉시 한글로 변환
+                    });
+                },
                 preConfirm: () => [
                     document.getElementById('swal-name').value,
                     document.getElementById('swal-birth').value,
@@ -426,7 +434,7 @@
             }
         };
 
-        // --- [수정된 부분] 통합 신청 모달 (아이디: 한글+숫자만) ---
+        // --- [수정] 통합 신청 (아이디: 한영 자동변환 + 숫자 허용) ---
         window.openCombinedModal = async (type, targetName = "") => {
             let titleText = type === 'attendance' ? "출석 체크" : (type === 'meal' ? `[${targetName}] 식사 신청` : "부식 신청");
             const activityHtml = `
@@ -439,11 +447,18 @@
 
             const { value: result } = await Swal.fire({
                 title: titleText,
-                // 아이디 입력란에 oninput 추가하여 한글과 숫자 이외 제거
                 html: activityHtml +
-                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)" oninput="this.value = this.value.replace(/[^가-힣0-9]/g, \'\')">' +
+                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)">' +
                       '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
                 showCancelButton: true, confirmButtonText: '신청 완료', width: 600,
+                didOpen: () => {
+                    // [중요] 아이디 입력 시: 영문은 한글로, 숫자는 그대로
+                    const idInput = document.getElementById('loginId');
+                    idInput.addEventListener('input', function() {
+                        // inko는 숫자는 건드리지 않고 영어만 한글로 바꿈 (gkd123 -> 홍123)
+                        this.value = inko.en2ko(this.value); 
+                    });
+                },
                 preConfirm: () => {
                     const actInput = document.querySelector('input[name="activity"]:checked');
                     return { activity: actInput ? actInput.value : "기초소양교육", id: document.getElementById('loginId').value, pw: document.getElementById('loginPw').value }
