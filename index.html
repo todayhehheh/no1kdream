@@ -313,7 +313,6 @@
     <script type="module">
         import { db, collection, addDoc, query, where, getDocs, getDoc, doc, Timestamp } from "./js/firebase-config.js";
 
-        // [중요] 한영 자동 변환기 초기화
         const inko = new Inko();
 
         const getTodayStr = () => {
@@ -383,11 +382,10 @@
             } else { console.log("미인증 기기"); }
         };
 
-        // --- 튜토리얼 모달 (이미지) ---
+        // --- 튜토리얼 (이미지) ---
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
-                // 유튜브 iframe 대신 이미지 태그 사용
                 html: `<img src="./tutorial.png" style="width: 100%; height: auto; border-radius: 10px; display: block;" alt="급식 튜토리얼 이미지">`,
                 showCloseButton: true, 
                 showConfirmButton: false, 
@@ -396,7 +394,15 @@
             });
         };
 
-        // --- [수정됨] 회원가입 모달 (이름: 영어 -> 한글 자동변환) ---
+        // --- [핵심] 한영 자동변환 로직 함수 ---
+        // 입력값을 받아 전체를 영어로 풀었다가 -> 다시 한글로 조립하여 반환
+        // 예: 'ghd' -> 'ㅎㅗㅇ' (X) -> '홍' (O)
+        const autoConvertHanEng = (text) => {
+            const eng = inko.ko2en(text); // 입력된 값이 한글이어도 영어로 풀기 (홍 -> ghd)
+            return inko.en2ko(eng);       // 풀린 영어를 다시 한글로 조립 (ghd -> 홍)
+        };
+
+        // --- [수정] 회원가입 모달 (이름: 한영 자동조립) ---
         window.openRegisterModal = async () => {
             const { value: formValues } = await Swal.fire({
                 title: '회원가입',
@@ -406,10 +412,12 @@
                       '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
                 focusConfirm: false, showCancelButton: true, confirmButtonText: '가입하기',
                 didOpen: () => {
-                    // [중요] 이름 입력 시 영어(gkd) -> 한글(홍) 자동 변환
                     const nameInput = document.getElementById('swal-name');
                     nameInput.addEventListener('input', function() {
-                        this.value = inko.en2ko(this.value); 
+                        // 1. 현재 값 전체를 영어로 풀었다가 다시 한글로 조립 (자소분리 해결)
+                        const converted = autoConvertHanEng(this.value);
+                        // 2. 한글 이외의 문자 제거 (숫자/특수문자 방지)
+                        this.value = converted.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
                     });
                 },
                 preConfirm: () => [
@@ -435,7 +443,7 @@
             }
         };
 
-        // --- [수정됨] 통합 신청 모달 (아이디: 영어 -> 한글 자동변환, 숫자는 유지) ---
+        // --- [수정] 통합 신청 모달 (아이디: 한영 자동조립 + 숫자 허용) ---
         window.openCombinedModal = async (type, targetName = "") => {
             let titleText = type === 'attendance' ? "출석 체크" : (type === 'meal' ? `[${targetName}] 식사 신청` : "부식 신청");
             const activityHtml = `
@@ -449,14 +457,17 @@
             const { value: result } = await Swal.fire({
                 title: titleText,
                 html: activityHtml +
-                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)">' +
+                      '<input id="loginId" class="swal2-input" placeholder="아이디 (이름+생년월일)" style="ime-mode:active;">' +
                       '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
                 showCancelButton: true, confirmButtonText: '신청 완료', width: 600,
                 didOpen: () => {
-                    // [중요] 아이디 입력 시: 영문은 한글로(gkd->홍), 숫자는 그대로(123->123)
                     const idInput = document.getElementById('loginId');
                     idInput.addEventListener('input', function() {
-                        this.value = inko.en2ko(this.value); 
+                        // 1. 전체를 재조립 (gkd -> 홍, 123 -> 123)
+                        // inko는 숫자는 그대로 두고 영문만 한글로 바꿉니다.
+                        const converted = autoConvertHanEng(this.value);
+                        // 2. 한글과 숫자만 남김
+                        this.value = converted.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ0-9]/g, '');
                     });
                 },
                 preConfirm: () => {
