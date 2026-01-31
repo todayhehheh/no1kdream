@@ -333,43 +333,63 @@
             return url;
         };
 
-        // --- 광고 로드 ---
+        // --- 광고 로드 (캐싱 적용됨) ---
         const DEFAULT_ADS = {
             ad1: { image: "https://placehold.co/400x500?text=Dream+Center", link: "#" },
             ad2: { image: "https://placehold.co/400x500?text=Ad+Space+2", link: "#" },
             ad3: { image: "https://placehold.co/400x500?text=Ad+Space+3", link: "#" }
         };
 
-        const applyDefaultAds = () => {
-            document.getElementById('ad1Img').src = DEFAULT_ADS.ad1.image;
-            document.getElementById('ad2Img').src = DEFAULT_ADS.ad2.image;
-            document.getElementById('ad3Img').src = DEFAULT_ADS.ad3.image;
+        // 광고를 화면에 뿌려주는 함수
+        const applyAdsToScreen = (data) => {
+            const setAd = (imgId, linkId, imgKey, linkKey, def) => {
+                const imgEl = document.getElementById(imgId);
+                const linkEl = document.getElementById(linkId);
+                
+                let rawUrl = data[imgKey];
+                if(rawUrl && rawUrl.trim() !== "") {
+                    imgEl.src = convertToDirectLink(rawUrl);
+                } else {
+                    imgEl.src = def.image;
+                }
+                
+                if(data[linkKey]) linkEl.href = data[linkKey];
+            };
+            setAd('ad1Img', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
+            setAd('ad2Img', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
+            setAd('ad3Img', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
         };
 
+        // [핵심] 캐싱이 적용된 loadAds 함수
         const loadAds = async () => {
+            const CACHE_DURATION = 1000 * 60 * 60; // 1시간
+            const now = Date.now();
+
+            const savedAds = localStorage.getItem('ads_cache');
+            const savedTime = localStorage.getItem('ads_timestamp');
+
+            if (savedAds && savedTime && (now - Number(savedTime) < CACHE_DURATION)) {
+                console.log("광고: 캐시 사용 (비용 0원)");
+                applyAdsToScreen(JSON.parse(savedAds));
+                return;
+            }
+
+            console.log("광고: 서버에서 가져옴 (비용 발생)");
             try {
                 const docRef = doc(db, "settings", "ads");
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    const setAd = (imgId, linkId, imgKey, linkKey, def) => {
-                        const imgEl = document.getElementById(imgId);
-                        const linkEl = document.getElementById(linkId);
-                        
-                        let rawUrl = data[imgKey];
-                        if(rawUrl && rawUrl.trim() !== "") {
-                            imgEl.src = convertToDirectLink(rawUrl);
-                        } else {
-                            imgEl.src = def.image;
-                        }
-                        
-                        if(data[linkKey]) linkEl.href = data[linkKey];
-                    };
-                    setAd('ad1Img', 'ad1Link', 'ad1_img', 'ad1_link', DEFAULT_ADS.ad1);
-                    setAd('ad2Img', 'ad2Link', 'ad2_img', 'ad2_link', DEFAULT_ADS.ad2);
-                    setAd('ad3Img', 'ad3Link', 'ad3_img', 'ad3_link', DEFAULT_ADS.ad3);
-                } else applyDefaultAds();
-            } catch(e) { console.error(e); applyDefaultAds(); }
+                    localStorage.setItem('ads_cache', JSON.stringify(data));
+                    localStorage.setItem('ads_timestamp', now.toString());
+                    applyAdsToScreen(data);
+                } else {
+                    applyAdsToScreen({});
+                }
+            } catch(e) { 
+                if (savedAds) applyAdsToScreen(JSON.parse(savedAds));
+                else applyAdsToScreen({});
+            }
         };
 
         // --- 기기 인증 ---
@@ -386,6 +406,7 @@
         window.openTutorialModal = () => {
             Swal.fire({
                 title: '<strong>급식 튜토리얼</strong>',
+                // 주의: 아래 src 경로에 있는 파일명(tutorial.png)이 폴더에 있는 파일명과 정확히 일치해야 합니다.
                 html: `<img src="./tutorial.png" style="width: 100%; height: auto; border-radius: 10px; display: block;" alt="급식 튜토리얼 이미지">`,
                 showCloseButton: true, 
                 showConfirmButton: false, 
@@ -394,15 +415,16 @@
             });
         };
 
-        // --- [핵심] 한영 자동변환 로직 함수 ---
-        // 입력값을 받아 전체를 영어로 풀었다가 -> 다시 한글로 조립하여 반환
-        // 예: 'ghd' -> 'ㅎㅗㅇ' (X) -> '홍' (O)
+        // --- [핵심] 한영 자동조립 함수 (gkd -> ㅎㅗㅇ -> 홍) ---
         const autoConvertHanEng = (text) => {
-            const eng = inko.ko2en(text); // 입력된 값이 한글이어도 영어로 풀기 (홍 -> ghd)
-            return inko.en2ko(eng);       // 풀린 영어를 다시 한글로 조립 (ghd -> 홍)
+            // 1. 현재 입력된 값 전체를 영어 자판 기준으로 해체 (예: 홍 -> ghd)
+            const eng = inko.ko2en(text); 
+            // 2. 해체된 영어를 다시 한글로 조립 (예: ghd -> 홍)
+            // 이렇게 해야 자소(ㅎ,ㅗ,ㅇ)가 분리되지 않고 합쳐집니다.
+            return inko.en2ko(eng);       
         };
 
-        // --- [수정] 회원가입 모달 (이름: 한영 자동조립) ---
+        // --- [수정됨] 회원가입 모달 (이름: 한글만) ---
         window.openRegisterModal = async () => {
             const { value: formValues } = await Swal.fire({
                 title: '회원가입',
@@ -412,11 +434,11 @@
                       '<input id="swal-pw2" class="swal2-input" type="password" placeholder="비밀번호 확인">',
                 focusConfirm: false, showCancelButton: true, confirmButtonText: '가입하기',
                 didOpen: () => {
+                    // [중요] 이름 입력 시: 한영 자동조립 + 한글 외 제거
                     const nameInput = document.getElementById('swal-name');
                     nameInput.addEventListener('input', function() {
-                        // 1. 현재 값 전체를 영어로 풀었다가 다시 한글로 조립 (자소분리 해결)
                         const converted = autoConvertHanEng(this.value);
-                        // 2. 한글 이외의 문자 제거 (숫자/특수문자 방지)
+                        // ㄱ-ㅎㅏ-ㅣ (자음모음)도 포함해야 입력 중간에 안 사라짐
                         this.value = converted.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ]/g, '');
                     });
                 },
@@ -443,7 +465,7 @@
             }
         };
 
-        // --- [수정] 통합 신청 모달 (아이디: 한영 자동조립 + 숫자 허용) ---
+        // --- [수정됨] 통합 신청 모달 (아이디: 한글+숫자) ---
         window.openCombinedModal = async (type, targetName = "") => {
             let titleText = type === 'attendance' ? "출석 체크" : (type === 'meal' ? `[${targetName}] 식사 신청` : "부식 신청");
             const activityHtml = `
@@ -461,12 +483,11 @@
                       '<input id="loginPw" class="swal2-input" type="password" placeholder="비밀번호">',
                 showCancelButton: true, confirmButtonText: '신청 완료', width: 600,
                 didOpen: () => {
+                    // [중요] 아이디 입력 시: 한영 자동조립 + 한글/숫자만 허용
                     const idInput = document.getElementById('loginId');
                     idInput.addEventListener('input', function() {
-                        // 1. 전체를 재조립 (gkd -> 홍, 123 -> 123)
-                        // inko는 숫자는 그대로 두고 영문만 한글로 바꿉니다.
                         const converted = autoConvertHanEng(this.value);
-                        // 2. 한글과 숫자만 남김
+                        // 숫자(0-9)도 허용해야 생년월일 입력 가능
                         this.value = converted.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ0-9]/g, '');
                     });
                 },
