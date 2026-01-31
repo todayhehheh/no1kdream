@@ -56,7 +56,7 @@
         @media (max-width: 800px) { .ad-setting-box { grid-template-columns: 1fr; } }
         .ad-card { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; }
         
-        /* [신규] 선결제 잔액 관리 박스 */
+        /* 선결제 잔액 관리 박스 */
         .balance-manage-box { 
             display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; 
         }
@@ -159,7 +159,7 @@
             </div>
             <table id="settleTable">
                 <thead><tr><th>날짜</th> <th>이름 (생년월일)</th> <th>업체</th> <th>금액</th> <th>정산/관리</th></tr></thead>
-                <tbody id="settleBody"></tbody>
+                <tbody id="settleBody"><tr><td colspan="5">기간 선택 후 [조회] 버튼을 눌러주세요.</td></tr></tbody>
             </table>
         </div>
 
@@ -178,7 +178,7 @@
             </div>
             <table id="recordTable">
                 <thead><tr><th>이름 (생년월일)</th> <th>일자</th> <th>활동내역</th></tr></thead>
-                <tbody id="recBody"></tbody>
+                <tbody id="recBody"><tr><td colspan="3">기간 선택 후 [조회] 버튼을 눌러주세요.</td></tr></tbody>
             </table>
         </div>
 
@@ -201,7 +201,7 @@
             </div>
             <table id="eduTable">
                 <thead><tr><th>수강일자</th> <th>이름</th> <th>생년월일</th> <th>수강과목</th> <th>강의명</th></tr></thead>
-                <tbody id="eduBody"><tr><td colspan="5">데이터 로딩 중...</td></tr></tbody>
+                <tbody id="eduBody"><tr><td colspan="5">기간 선택 후 [조회] 버튼을 눌러주세요.</td></tr></tbody>
             </table>
         </div>
 
@@ -214,7 +214,7 @@
             </div>
             <table id="snackTable">
                 <thead><tr><th>일자</th> <th>이름</th> <th>생년월일</th> <th>신청내역</th></tr></thead>
-                <tbody id="snackBody"><tr><td colspan="4">데이터 로딩 중...</td></tr></tbody>
+                <tbody id="snackBody"><tr><td colspan="4">기간 선택 후 [조회] 버튼을 눌러주세요.</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -226,9 +226,16 @@
 
         const ADMIN_PW = "1388";
         const showLoading = (show) => { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
+        
+        // 날짜 포맷 함수
         const getTodayStr = () => {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        };
+        const get3DaysAgoStr = () => {
+            const d = new Date();
+            d.setDate(d.getDate() - 3); // 3일 전
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
 
         const STORE_LIST = ['달인보쌈', '미스테리분식', '연김밥', '동일로즉석떡볶이', '우리동네 첫끼'];
@@ -242,25 +249,53 @@
                 document.body.innerHTML = "<div style='text-align:center;margin-top:20%;color:red;'><h2>⛔ 접근 권한이 없습니다.</h2><button onclick='location.reload()'>다시 시도</button></div>";
                 return;
             }
-            const todayStr = getTodayStr();
-            const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
-            const monthAgoStr = monthAgo.toISOString().split('T')[0];
+            
+            document.getElementById('todayDisplay').innerText = getTodayStr();
+            loadAllUsersAndApps(); // 1번 탭(회원)만 자동 로딩
+        };
 
-            document.getElementById('todayDisplay').innerText = todayStr;
-            ['settle', 'rec', 'edu', 'snack'].forEach(prefix => {
-                document.getElementById(`${prefix}Start`).value = monthAgoStr;
-                document.getElementById(`${prefix}End`).value = todayStr;
-            });
+        // --- 3. 캐싱 전략 설명 (localStorage) ---
+        // 아래 함수들은 키오스크 쪽에서 쓸 수 있는 예시입니다. (어드민엔 적용 X, 키오스크에 적용하면 좋음)
+        // 개념: "서버에서 가져온 데이터를 내 컴퓨터(브라우저)에 몰래 저장해두고, 다음엔 서버 안 부르고 그거 쓰기"
 
-            loadAllUsersAndApps();
+        // --- 2. 통계 문서(Aggregation) 전략 설명 ---
+        // 개념: "돼지저금통(전체 문서)을 매번 털어서 세지 말고, 동전 넣을 때마다 노트(통계 문서)에 '+100원' 이라고 적어두기"
+        // 지금은 적용하지 않았지만, 나중에 학생이 1,000명 넘어가면 그때 제가 코드를 짜드리면 됩니다.
+
+        // --- 탭 전환 로직 (수정됨: 자동 로딩 끔 & 날짜 세팅) ---
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            
+            const idx = ['users','settlement','records','ads','education','snacks'].indexOf(tabName);
+            if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+            
+            // [중요] 1번 탭만 자동 로딩, 나머지는 날짜만 세팅하고 대기
+            if(tabName === 'users') {
+                loadAllUsersAndApps();
+            } else if (['settlement', 'records', 'education', 'snacks'].includes(tabName)) {
+                // 날짜 기본값 세팅 (3일 전 ~ 오늘)
+                const prefix = tabName === 'settlement' ? 'settle' : (tabName === 'records' ? 'rec' : (tabName === 'education' ? 'edu' : 'snack'));
+                document.getElementById(`${prefix}Start`).value = get3DaysAgoStr();
+                document.getElementById(`${prefix}End`).value = getTodayStr();
+                
+                // 테이블 초기화 (조회 누르라고 안내)
+                const tbodyId = tabName === 'settlement' ? 'settleBody' : (tabName === 'records' ? 'recBody' : (tabName === 'education' ? 'eduBody' : 'snackBody'));
+                const colSpan = tabName === 'settlement' ? 5 : (tabName === 'records' ? 3 : (tabName === 'education' ? 5 : 4));
+                document.getElementById(tbodyId).innerHTML = `<tr><td colspan='${colSpan}' style="padding:30px; color:#888;">🔍 기간을 확인하고 <b>[조회]</b> 버튼을 눌러주세요.</td></tr>`;
+                
+                // 정산관리 탭일 경우 잔액은 보여줌 (잔액은 데이터 1개라 가벼움)
+                if(tabName === 'settlement') loadStoreBalances();
+            } else if (tabName === 'ads') {
+                loadAds(); // 광고 설정은 가벼우니 자동 로딩
+            }
         };
 
         // --- [신규 기능] 가게별 선결제 잔액 관리 ---
         window.loadStoreBalances = async () => {
             const box = document.getElementById('balanceBox');
             box.innerHTML = '';
-            
-            // 5개 가게에 대해 각각 DB 조회
             for (const store of STORE_LIST) {
                 let balance = 0;
                 try {
@@ -268,7 +303,6 @@
                     const docSnap = await getDoc(docRef);
                     if(docSnap.exists()) balance = docSnap.data().balance || 0;
                 } catch(e) { console.error(e); }
-
                 box.innerHTML += `
                     <div class="balance-item" onclick="updateStoreBalance('${store}', ${balance})">
                         <div class="balance-store">${store}</div>
@@ -280,124 +314,53 @@
 
         window.updateStoreBalance = async (storeName, currentBalance) => {
             const { value: newAmount } = await Swal.fire({
-                title: `${storeName} 잔액 수정`,
-                input: 'number',
-                inputValue: currentBalance,
-                text: '현재 선결제 잔액을 입력하세요.',
-                showCancelButton: true
+                title: `${storeName} 잔액 수정`, input: 'number', inputValue: currentBalance,
+                text: '현재 선결제 잔액을 입력하세요.', showCancelButton: true
             });
-
             if (newAmount !== null && newAmount !== "") {
                 try {
                     showLoading(true);
-                    // stores 컬렉션에 저장 (문서 ID를 가게 이름으로 사용)
                     await setDoc(doc(db, "stores", storeName), { balance: Number(newAmount) }, { merge: true });
-                    showLoading(false);
-                    Swal.fire("수정 완료", "잔액이 업데이트되었습니다.", "success");
-                    loadStoreBalances(); // 새로고침
-                } catch(e) {
-                    showLoading(false);
-                    console.error(e);
-                    Swal.fire("오류", "저장 실패", "error");
-                }
+                    showLoading(false); Swal.fire("수정 완료", "잔액이 업데이트되었습니다.", "success");
+                    loadStoreBalances();
+                } catch(e) { showLoading(false); console.error(e); Swal.fire("오류", "저장 실패", "error"); }
             }
         };
 
-        // --- Tab 1: 회원 및 급식 관리 ---
+        // --- Tab 1: 회원 및 급식 관리 (기존 유지) ---
         window.loadAllUsersAndApps = async () => {
             showLoading(true);
             const today = getTodayStr();
             const tbody = document.getElementById('userTableBody');
-            
             try {
                 const userSnap = await getDocs(query(collection(db, "users"), orderBy("name")));
                 const appSnap = await getDocs(query(collection(db, "meal_applications"), where("date", "==", today)));
-
                 let appsMap = {};
-                appSnap.forEach(doc => {
-                    const d = doc.data();
-                    if (!appsMap[d.student_id]) appsMap[d.student_id] = [];
-                    appsMap[d.student_id].push({ docId: doc.id, ...d, ts: d.timestamp ? d.timestamp.toMillis() : 0 });
-                });
-
+                appSnap.forEach(doc => { const d = doc.data(); if (!appsMap[d.student_id]) appsMap[d.student_id] = []; appsMap[d.student_id].push({ docId: doc.id, ...d, ts: d.timestamp ? d.timestamp.toMillis() : 0 }); });
                 tbody.innerHTML = "";
                 if (userSnap.empty) { tbody.innerHTML = "<tr><td colspan='5'>회원 없음</td></tr>"; showLoading(false); return; }
-
                 userSnap.forEach(userDoc => {
-                    const u = userDoc.data();
-                    const userId = userDoc.id;
-                    let studentApps = appsMap[userId] || [];
-                    
+                    const u = userDoc.data(); const userId = userDoc.id; let studentApps = appsMap[userId] || [];
                     studentApps.sort((a,b) => b.ts - a.ts);
                     let activeApp = studentApps.find(app => app.status === 'applied' || app.status === 'approved');
                     let completedCount = studentApps.filter(app => app.status === 'completed').length;
-
-                    let statusText = `<span style="color:#ccc;">-</span>`;
-                    let buttonsHtml = '';
-
+                    let statusText = `<span style="color:#ccc;">-</span>`; let buttonsHtml = '';
                     if (activeApp) {
-                        const store = activeApp.store_name;
-                        const status = activeApp.status;
-                        const appId = activeApp.docId;
-
+                        const store = activeApp.store_name; const status = activeApp.status; const appId = activeApp.docId;
                         if (status === 'applied') statusText = `<span class="badge badge-blue">${store} (신청)</span>`;
                         else statusText = `<span class="badge badge-green" style="background:#fff9db; color:#f08c00;">${store} (승인)</span>`;
-
-                        const cD = store === '달인보쌈' ? 'active-dalin' : '';
-                        const cM = store === '미스테리분식' ? 'active-mystery' : '';
-                        const cY = store === '연김밥' ? 'active-yeon' : '';
-                        const cT = store === '동일로즉석떡볶이' ? 'active-dduk' : ''; 
-                        const cW = store === '우리동네 첫끼' ? 'active-meal' : '';
-
-                        buttonsHtml = `<div class="store-toggles">
-                            <button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn ${cM}" onclick="changeStore('${appId}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button>
-                            <button class="toggle-btn ${cT}" onclick="changeStore('${appId}', '동일로즉석떡볶이')">떡볶이</button>
-                            <button class="toggle-btn ${cW}" onclick="changeStore('${appId}', '우리동네 첫끼')">첫끼</button>
-                        </div>`;
+                        const cD = store === '달인보쌈' ? 'active-dalin' : ''; const cM = store === '미스테리분식' ? 'active-mystery' : ''; const cY = store === '연김밥' ? 'active-yeon' : ''; const cT = store === '동일로즉석떡볶이' ? 'active-dduk' : ''; const cW = store === '우리동네 첫끼' ? 'active-meal' : '';
+                        buttonsHtml = `<div class="store-toggles"><button class="toggle-btn ${cD}" onclick="changeStore('${appId}', '달인보쌈')">달인</button><button class="toggle-btn ${cM}" onclick="changeStore('${appId}', '미스테리분식')">미스테리</button><button class="toggle-btn ${cY}" onclick="changeStore('${appId}', '연김밥')">연김밥</button><button class="toggle-btn ${cT}" onclick="changeStore('${appId}', '동일로즉석떡볶이')">떡볶이</button><button class="toggle-btn ${cW}" onclick="changeStore('${appId}', '우리동네 첫끼')">첫끼</button></div>`;
                     } else {
-                        buttonsHtml = `<div class="store-toggles">
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '동일로즉석떡볶이')">떡볶이</button>
-                            <button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '우리동네 첫끼')">첫끼</button>
-                        </div>`;
+                        buttonsHtml = `<div class="store-toggles"><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '동일로즉석떡볶이')">떡볶이</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '우리동네 첫끼')">첫끼</button></div>`;
                         if(completedCount > 0) statusText = `<span class="badge badge-green">완료 (${completedCount})</span>`;
                     }
-
-                    tbody.innerHTML += `<tr>
-                        <td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td>
-                        <td>${statusText}</td>
-                        <td>${buttonsHtml}</td>
-                        <td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td>
-                        <td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td>
-                    </tr>`;
+                    tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td><td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td></tr>`;
                 });
-            } catch(e) { console.error(e); }
-            showLoading(false);
+            } catch(e) { console.error(e); } showLoading(false);
         };
-
-        window.changeStore = async (docId, newStore) => {
-            showLoading(true);
-            try {
-                await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" });
-                loadAllUsersAndApps();
-            } catch(e) { console.error(e); Swal.fire("오류", "변경 실패", "error"); }
-            showLoading(false);
-        };
-
-        window.forceApprove = async (userId, userName, storeName) => {
-            if(confirm(`${userName}님에게 [${storeName}] 식사권을 발급하시겠습니까?`)) {
-                await addDoc(collection(db, "meal_applications"), {
-                    student_id: userId, student_name: userName, store_name: storeName,
-                    status: "approved", date: getTodayStr(), 
-                    activity: "관리자승인", timestamp: Timestamp.now(), is_settled: false
-                });
-                loadAllUsersAndApps();
-            }
-        };
+        window.changeStore = async (docId, newStore) => { showLoading(true); try { await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" }); loadAllUsersAndApps(); } catch(e) { Swal.fire("오류", "변경 실패", "error"); } showLoading(false); };
+        window.forceApprove = async (userId, userName, storeName) => { if(confirm(`${userName}님에게 [${storeName}] 식사권을 발급하시겠습니까?`)) { await addDoc(collection(db, "meal_applications"), { student_id: userId, student_name: userName, store_name: storeName, status: "approved", date: getTodayStr(), activity: "관리자승인", timestamp: Timestamp.now(), is_settled: false }); loadAllUsersAndApps(); } };
 
         // --- Tab 2: 정산 관리 ---
         window.loadSettlementData = async () => {
@@ -409,113 +372,50 @@
             const tbody = document.getElementById('settleBody');
             
             try {
-                let userMap = {};
-                const uSnap = await getDocs(collection(db, "users"));
-                uSnap.forEach(d => userMap[d.id] = d.data());
-
+                let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data());
                 const snap = await getDocs(query(collection(db, "meal_applications"), orderBy("timestamp", "desc")));
                 let list = [], totalCnt=0, totalPrice=0, totalUnpaid=0;
-
                 snap.forEach(doc => {
                     const d = doc.data();
                     if (d.date < start || d.date > end) return;
                     if (targetStore !== 'all' && d.store_name !== targetStore) return;
                     if (d.status !== 'completed') return;
-
                     const isSettled = d.is_settled === true;
                     if (targetStatus === 'no' && isSettled) return;
                     if (targetStatus === 'yes' && !isSettled) return;
-
                     const price = d.amount ? Number(d.amount) : 0;
-                    totalCnt++; 
-                    totalPrice += price;
-                    if(!isSettled) totalUnpaid += price;
-                    
+                    totalCnt++; totalPrice += price; if(!isSettled) totalUnpaid += price;
                     const u = userMap[d.student_id] || { name: d.student_name, birth: '' };
                     list.push({ id: doc.id, ...d, price, isSettled, uName: u.name, uBirth: u.birth });
                 });
-
-                document.getElementById('sumCount').innerText = totalCnt + "건";
-                document.getElementById('sumPrice').innerText = totalPrice.toLocaleString() + "원";
-                document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString() + "원";
-
+                document.getElementById('sumCount').innerText = totalCnt + "건"; document.getElementById('sumPrice').innerText = totalPrice.toLocaleString() + "원"; document.getElementById('sumUnpaid').innerText = totalUnpaid.toLocaleString() + "원";
                 tbody.innerHTML = list.length ? "" : "<tr><td colspan='5'>내역 없음</td></tr>";
                 list.forEach(item => {
-                    const btnToggle = item.isSettled ? 
-                        `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">🟢 정산완료</button>` : 
-                        `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`;
-                    
+                    const btnToggle = item.isSettled ? `<button class="btn-small btn-green" onclick="toggleSettle('${item.id}', false)">🟢 정산완료</button>` : `<button class="btn-small btn-red" onclick="toggleSettle('${item.id}', true)">🔴 미정산 (입금전)</button>`;
                     const btnEdit = `<button class="btn-small btn-blue" onclick="editSettlement('${item.id}', '${item.price}', '${item.store_name}')" style="margin-left:5px;">✏️</button>`;
                     const btnDel = `<button class="btn-small btn-red" onclick="deleteSettlement('${item.id}')" style="margin-left:2px;">🗑️</button>`;
-                    
-                    tbody.innerHTML += `<tr>
-                        <td>${item.date}</td>
-                        <td>${item.uName} <span style="font-size:12px;color:#888;">(${item.uBirth})</span></td>
-                        <td>${item.store_name}</td>
-                        <td>${item.price.toLocaleString()}원</td>
-                        <td>${btnToggle} ${btnEdit} ${btnDel}</td>
-                    </tr>`;
+                    tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.uName} <span style="font-size:12px;color:#888;">(${item.uBirth})</span></td><td>${item.store_name}</td><td>${item.price.toLocaleString()}원</td><td>${btnToggle} ${btnEdit} ${btnDel}</td></tr>`;
                 });
-            } catch(e) { console.error(e); }
-            showLoading(false);
+            } catch(e) { console.error(e); } showLoading(false);
         };
-
-        window.toggleSettle = async (id, state) => {
-            if(confirm("정산 상태를 변경하시겠습니까?")) {
-                await updateDoc(doc(db, "meal_applications", id), { is_settled: state });
-                loadSettlementData();
-            }
-        };
-
-        window.deleteSettlement = async (id) => {
-            if(confirm("정말 이 내역을 삭제하시겠습니까? (복구 불가)")) {
-                showLoading(true);
-                await deleteDoc(doc(db, "meal_applications", id));
-                showLoading(false);
-                loadSettlementData();
-            }
-        };
-
+        window.toggleSettle = async (id, state) => { if(confirm("정산 상태를 변경하시겠습니까?")) { await updateDoc(doc(db, "meal_applications", id), { is_settled: state }); loadSettlementData(); } };
+        window.deleteSettlement = async (id) => { if(confirm("정말 이 내역을 삭제하시겠습니까?")) { showLoading(true); await deleteDoc(doc(db, "meal_applications", id)); showLoading(false); loadSettlementData(); } };
         window.editSettlement = async (id, oldPrice, oldStore) => {
             const { value: formValues } = await Swal.fire({
-                title: '정산 내역 수정',
-                html:
-                    `<div>금액 수정</div><input id="swal-edit-price" class="swal2-input" type="number" value="${oldPrice}">` +
-                    `<div>가게 수정</div><select id="swal-edit-store" class="swal2-input">` +
-                    STORE_LIST.map(s => `<option value="${s}" ${oldStore===s?'selected':''}>${s}</option>`).join('') +
-                    `</select>`,
-                focusConfirm: false,
-                showCancelButton: true,
-                preConfirm: () => {
-                    return [
-                        document.getElementById('swal-edit-price').value,
-                        document.getElementById('swal-edit-store').value
-                    ]
-                }
+                title: '정산 내역 수정', html: `<div>금액 수정</div><input id="swal-edit-price" class="swal2-input" type="number" value="${oldPrice}">` + `<div>가게 수정</div><select id="swal-edit-store" class="swal2-input">` + STORE_LIST.map(s => `<option value="${s}" ${oldStore===s?'selected':''}>${s}</option>`).join('') + `</select>`, focusConfirm: false, showCancelButton: true, preConfirm: () => [document.getElementById('swal-edit-price').value, document.getElementById('swal-edit-store').value]
             });
-
-            if (formValues) {
-                const newPrice = Number(formValues[0]);
-                const newStore = formValues[1];
-                showLoading(true);
-                await updateDoc(doc(db, "meal_applications", id), { amount: newPrice, store_name: newStore });
-                showLoading(false);
-                loadSettlementData();
-                Swal.fire("수정 완료", "", "success");
-            }
+            if (formValues) { showLoading(true); await updateDoc(doc(db, "meal_applications", id), { amount: Number(formValues[0]), store_name: formValues[1] }); showLoading(false); loadSettlementData(); Swal.fire("수정 완료", "", "success"); }
         };
 
-        // --- Tab 3,4,5,6 & Utils (기존 유지) ---
-        window.loadRecords = async () => { /* ... */ 
+        // --- Tab 3: 통합 기록 ---
+        window.loadRecords = async () => {
             showLoading(true);
             const start = document.getElementById('recStart').value;
             const end = document.getElementById('recEnd').value;
             const filterAct = document.getElementById('recActivity').value;
             const tbody = document.getElementById('recBody');
             try {
-                let userMap = {};
-                const uSnap = await getDocs(collection(db, "users"));
-                uSnap.forEach(d => userMap[d.id] = d.data());
+                let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data());
                 let records = [];
                 const add = (snap, type) => snap.forEach(d => {
                     const data = d.data();
@@ -528,46 +428,46 @@
                         records.push({ date: data.date, name: u.name, birth: u.birth, act: actName, ts: ts });
                     }
                 });
-                const [attSnap, mealSnap, snackSnap] = await Promise.all([
-                    getDocs(query(collection(db, "attendance"))),
-                    getDocs(query(collection(db, "meal_applications"))),
-                    getDocs(query(collection(db, "snacks")))
-                ]);
+                const [attSnap, mealSnap, snackSnap] = await Promise.all([ getDocs(query(collection(db, "attendance"))), getDocs(query(collection(db, "meal_applications"))), getDocs(query(collection(db, "snacks"))) ]);
                 add(attSnap, 'attendance'); add(mealSnap, 'meal'); add(snackSnap, 'snack');
                 records.sort((a,b) => b.ts - a.ts);
                 tbody.innerHTML = records.length ? "" : "<tr><td colspan='3'>기록 없음</td></tr>";
                 records.forEach(r => tbody.innerHTML += `<tr><td>${r.name} <span style="font-size:12px;color:#888;">(${r.birth})</span></td><td>${r.date}</td><td>${r.act}</td></tr>`);
-            } catch(e) { console.error(e); }
-            showLoading(false);
+            } catch(e) { console.error(e); } showLoading(false);
         };
 
-        window.loadAds = async () => { /* ... */ try { const docSnap = await getDoc(doc(db, "settings", "ads")); if(docSnap.exists()) { const d = docSnap.data(); document.getElementById('ad1Img').value = d.ad1_img || ""; document.getElementById('ad1Link').value = d.ad1_link || ""; document.getElementById('ad2Img').value = d.ad2_img || ""; document.getElementById('ad2Link').value = d.ad2_link || ""; document.getElementById('ad3Img').value = d.ad3_img || ""; document.getElementById('ad3Link').value = d.ad3_link || ""; } } catch(e) {} };
-        window.saveAds = async () => { /* ... */ await setDoc(doc(db, "settings", "ads"), { ad1_img: document.getElementById('ad1Img').value, ad1_link: document.getElementById('ad1Link').value, ad2_img: document.getElementById('ad2Img').value, ad2_link: document.getElementById('ad2Link').value, ad3_img: document.getElementById('ad3Img').value, ad3_link: document.getElementById('ad3Link').value }); Swal.fire("저장 완료", "키오스크에 즉시 반영됩니다.", "success"); };
-        window.loadEducationStats = async () => { /* ... */ showLoading(true); const tbody = document.getElementById('eduBody'); const searchName = document.getElementById('eduSearchName').value.trim(); const start = document.getElementById('eduStart').value; const end = document.getElementById('eduEnd').value; try { const q = query(collection(db, "education_records"), orderBy("timestamp", "desc")); const querySnapshot = await getDocs(q); let records = []; querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; records.push(d); }); tbody.innerHTML = records.length ? "" : "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>"; records.forEach(d => { tbody.innerHTML += `<tr><td>${d.date}</td><td>${d.student_name}</td><td>${d.student_birth || '-'}</td><td><span class="badge badge-blue">${d.category}</span></td><td style="text-align:left; padding-left:15px;">${d.video_title}</td></tr>`; }); } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; } showLoading(false); };
-        window.loadSnackStats = async () => { /* ... */ showLoading(true); const tbody = document.getElementById('snackBody'); const searchName = document.getElementById('snackSearchName').value.trim(); const start = document.getElementById('snackStart').value; const end = document.getElementById('snackEnd').value; try { let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data()); const q = query(collection(db, "snacks")); const querySnapshot = await getDocs(q); let list = []; querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime(); const u = userMap[d.student_id] || { birth: '-' }; list.push({ ...d, ts: ts, birth: u.birth }); }); list.sort((a, b) => b.ts - a.ts); tbody.innerHTML = list.length ? "" : "<tr><td colspan='4'>조회된 내역이 없습니다.</td></tr>"; list.forEach(item => { tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.birth}</td><td>${item.item || '간식'}</td></tr>`; }); } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>로딩 실패</td></tr>"; } showLoading(false); };
-
-        window.switchTab = (tabName) => {
-            document.querySelectorAll('.table-box').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).style.display = 'block';
-            const idx = ['users','settlement','records','ads','education','snacks'].indexOf(tabName);
-            if(idx>=0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
-            
-            if(tabName==='users') loadAllUsersAndApps();
-            if(tabName==='settlement') { loadSettlementData(); loadStoreBalances(); } // [수정] 잔액도 함께 로드
-            if(tabName==='records') loadRecords();
-            if(tabName==='ads') loadAds(); 
-            if(tabName==='education') loadEducationStats(); 
-            if(tabName==='snacks') loadSnackStats();
-        };
+        // --- Tab 4,5,6 ---
+        window.loadAds = async () => { try { const docSnap = await getDoc(doc(db, "settings", "ads")); if(docSnap.exists()) { const d = docSnap.data(); document.getElementById('ad1Img').value = d.ad1_img || ""; document.getElementById('ad1Link').value = d.ad1_link || ""; document.getElementById('ad2Img').value = d.ad2_img || ""; document.getElementById('ad2Link').value = d.ad2_link || ""; document.getElementById('ad3Img').value = d.ad3_img || ""; document.getElementById('ad3Link').value = d.ad3_link || ""; } } catch(e) {} };
+        window.saveAds = async () => { await setDoc(doc(db, "settings", "ads"), { ad1_img: document.getElementById('ad1Img').value, ad1_link: document.getElementById('ad1Link').value, ad2_img: document.getElementById('ad2Img').value, ad2_link: document.getElementById('ad2Link').value, ad3_img: document.getElementById('ad3Img').value, ad3_link: document.getElementById('ad3Link').value }); Swal.fire("저장 완료", "키오스크에 즉시 반영됩니다.", "success"); };
         
+        window.loadEducationStats = async () => {
+            showLoading(true); const tbody = document.getElementById('eduBody'); const searchName = document.getElementById('eduSearchName').value.trim(); const start = document.getElementById('eduStart').value; const end = document.getElementById('eduEnd').value;
+            try {
+                const q = query(collection(db, "education_records"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q); let records = [];
+                querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; records.push(d); });
+                tbody.innerHTML = records.length ? "" : "<tr><td colspan='5'>조회된 내역이 없습니다.</td></tr>";
+                records.forEach(d => { tbody.innerHTML += `<tr><td>${d.date}</td><td>${d.student_name}</td><td>${d.student_birth || '-'}</td><td><span class="badge badge-blue">${d.category}</span></td><td style="text-align:left; padding-left:15px;">${d.video_title}</td></tr>`; });
+            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='5'>로딩 실패</td></tr>"; } showLoading(false);
+        };
+
+        window.loadSnackStats = async () => {
+            showLoading(true); const tbody = document.getElementById('snackBody'); const searchName = document.getElementById('snackSearchName').value.trim(); const start = document.getElementById('snackStart').value; const end = document.getElementById('snackEnd').value;
+            try {
+                let userMap = {}; const uSnap = await getDocs(collection(db, "users")); uSnap.forEach(d => userMap[d.id] = d.data());
+                const q = query(collection(db, "snacks")); const querySnapshot = await getDocs(q); let list = [];
+                querySnapshot.forEach(doc => { const d = doc.data(); if (d.date < start || d.date > end) return; if (searchName && !d.student_name.includes(searchName)) return; const ts = d.timestamp ? d.timestamp.toMillis() : new Date(d.date).getTime(); const u = userMap[d.student_id] || { birth: '-' }; list.push({ ...d, ts: ts, birth: u.birth }); });
+                list.sort((a, b) => b.ts - a.ts); tbody.innerHTML = list.length ? "" : "<tr><td colspan='4'>조회된 내역이 없습니다.</td></tr>";
+                list.forEach(item => { tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.student_name}</td><td>${item.birth}</td><td>${item.item || '간식'}</td></tr>`; });
+            } catch(e) { console.error(e); tbody.innerHTML = "<tr><td colspan='4'>로딩 실패</td></tr>"; } showLoading(false);
+        };
+
         window.refreshData = () => { 
             const activeTabBtn = document.querySelector('.tab-btn.active');
             if (activeTabBtn) {
                 const idx = Array.from(document.querySelectorAll('.tab-btn')).indexOf(activeTabBtn);
-                if (idx === 0) loadAllUsersAndApps(); else if (idx === 1) { loadSettlementData(); loadStoreBalances(); } else if (idx === 2) loadRecords(); else if (idx === 3) loadAds(); else if (idx === 4) loadEducationStats(); else if (idx === 5) loadSnackStats();
-                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
-                Toast.fire({ icon: 'success', title: '새로고침 완료' });
+                if (idx === 0) loadAllUsersAndApps(); 
+                else Swal.fire("알림", "다른 탭은 [조회] 버튼을 눌러 새로고침해주세요.", "info");
             }
         };
 
@@ -577,8 +477,8 @@
         window.changePw = async (userId) => { const { value: np } = await Swal.fire({ title: '새 비밀번호', input: 'text', showCancelButton: true }); if (np) { await updateDoc(doc(db, "users", userId), { password: np }); Swal.fire('완료', '변경되었습니다.', 'success'); } };
         window.deleteUser = async (userId, name) => { if(confirm(`${name} 회원을 삭제하시겠습니까?`)) { await deleteDoc(doc(db, "users", userId)); loadAllUsersAndApps(); } };
         window.downloadTableAsExcel = (id, name) => { const wb = XLSX.utils.table_to_book(document.getElementById(id)); XLSX.writeFile(wb, name + ".xlsx"); };
-        window.generateSettlementPDF = () => { /* ... */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value; const storeSelect = document.getElementById('settleStore'); const store = storeSelect.options[storeSelect.selectedIndex].text; const count = document.getElementById('sumCount').innerText; const price = document.getElementById('sumPrice').innerText; const unpaid = document.getElementById('sumUnpaid').innerText; const originalTable = document.getElementById('settleTable').cloneNode(true); originalTable.className = "report-table"; originalTable.querySelectorAll('tr').forEach(row => { const cells = row.querySelectorAll('th, td'); if (cells.length > 0) cells[cells.length - 1].remove(); }); zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-sub">기간: ${start} ~ ${end} | 업체: ${store}</div></div><div class="report-summary-box"><div>총 건수: ${count}</div><div>총 매출: ${price}</div><div style="color:#c62828">미지급액: ${unpaid}</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `정산내역서_${start}`); };
-        window.generateRecordPDF = () => { /* ... */ const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('recStart').value; const originalTable = document.getElementById('recordTable').cloneNode(true); originalTable.className = "report-table"; zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-sub">기간: ${start} ~ ...</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `활동기록부_${start}`); };
+        window.generateSettlementPDF = () => { const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('settleStart').value; const end = document.getElementById('settleEnd').value; const storeSelect = document.getElementById('settleStore'); const store = storeSelect.options[storeSelect.selectedIndex].text; const count = document.getElementById('sumCount').innerText; const price = document.getElementById('sumPrice').innerText; const unpaid = document.getElementById('sumUnpaid').innerText; const originalTable = document.getElementById('settleTable').cloneNode(true); originalTable.className = "report-table"; originalTable.querySelectorAll('tr').forEach(row => { const cells = row.querySelectorAll('th, td'); if (cells.length > 0) cells[cells.length - 1].remove(); }); zone.innerHTML = `<div class="report-header"><h1 class="report-title">급식 정산 내역서</h1><div class="report-sub">기간: ${start} ~ ${end} | 업체: ${store}</div></div><div class="report-summary-box"><div>총 건수: ${count}</div><div>총 매출: ${price}</div><div style="color:#c62828">미지급액: ${unpaid}</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `정산내역서_${start}`); };
+        window.generateRecordPDF = () => { const zone = document.getElementById('hidden-print-zone'); const start = document.getElementById('recStart').value; const originalTable = document.getElementById('recordTable').cloneNode(true); originalTable.className = "report-table"; zone.innerHTML = `<div class="report-header"><h1 class="report-title">청소년 통합 활동 기록부</h1><div class="report-sub">기간: ${start} ~ ...</div></div>`; zone.appendChild(originalTable); downloadPDFFromElement(zone, `활동기록부_${start}`); };
         function downloadPDFFromElement(element, fileName) { showLoading(true); element.style.opacity = 1; setTimeout(() => { html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jspdf.jsPDF('p', 'mm', 'a4'); const imgWidth = 210; const pageHeight = 297; const imgHeight = (canvas.height * imgWidth / canvas.width) || 20; let heightLeft = imgHeight; let position = 0; pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; while (heightLeft > 0) { position = heightLeft - imgHeight; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; } pdf.save(fileName + ".pdf"); element.innerHTML = ""; element.style.opacity = 0; showLoading(false); }).catch(err => { console.error(err); alert("PDF 생성 오류"); element.style.opacity = 0; showLoading(false); }); }, 500); }
     </script>
 </body>
