@@ -2,7 +2,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, collection, addDoc, query, where, getDocs, 
-    Timestamp, getDoc, doc, updateDoc, deleteDoc, orderBy, setDoc 
+    Timestamp, getDoc, doc, updateDoc, deleteDoc, orderBy, setDoc,
+    onSnapshot // 👈 [추가됨] 실시간 감지를 위해 꼭 필요합니다!
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -32,5 +33,6 @@ export {
     deleteDoc, 
     doc, 
     orderBy,
-    Timestamp 
+    Timestamp,
+    onSnapshot // 👈 [추가됨] 이제 index.html에서 가져다 쓸 수 있습니다.
 };
