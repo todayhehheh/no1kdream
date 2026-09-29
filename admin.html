@@ -355,10 +355,154 @@
                         buttonsHtml = `<div class="store-toggles"><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '동일로즉석떡볶이')">떡볶이</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '우리동네 첫끼')">첫끼</button></div>`;
                         if(completedCount > 0) statusText = `<span class="badge badge-green">완료 (${completedCount})</span>`;
                     }
-                    tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td><td><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td><td><button class="btn-small btn-green" onclick="relinkOldRecords('${userId}', '${u.name}', '${u.birth}')" style="margin-bottom:4px;">기록연결</button><br><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td></tr>`;
                 });
             } catch(e) { console.error(e); } showLoading(false);
         };
+
+        // --- 회원 재가입 후 과거 기록 재연결 ---
+        window.relinkOldRecords = async (currentUserId, userName, userBirth) => {
+            const targetCollections = ["attendance", "meal_applications", "snacks", "education_records"];
+            showLoading(true);
+
+            try {
+                // 이름이 같은 과거 기록을 찾되, 현재 계정 ID는 제외한다.
+                // 교육기록에 생년월일이 저장된 경우에는 현재 회원 생년월일과 다른 기록을 제외한다.
+                const candidates = {};
+
+                for (const collectionName of targetCollections) {
+                    const snap = await getDocs(query(
+                        collection(db, collectionName),
+                        where("student_name", "==", userName)
+                    ));
+
+                    snap.forEach(recordDoc => {
+                        const data = recordDoc.data();
+                        const oldId = data.student_id;
+                        if (!oldId || oldId === currentUserId) return;
+
+                        if (
+                            collectionName === "education_records" &&
+                            data.student_birth &&
+                            String(data.student_birth) !== String(userBirth)
+                        ) return;
+
+                        if (!candidates[oldId]) {
+                            candidates[oldId] = {
+                                total: 0,
+                                counts: {
+                                    attendance: 0,
+                                    meal_applications: 0,
+                                    snacks: 0,
+                                    education_records: 0
+                                },
+                                records: []
+                            };
+                        }
+
+                        candidates[oldId].total += 1;
+                        candidates[oldId].counts[collectionName] += 1;
+                        candidates[oldId].records.push({
+                            collectionName,
+                            docId: recordDoc.id
+                        });
+                    });
+                }
+
+                showLoading(false);
+
+                const candidateIds = Object.keys(candidates);
+                if (candidateIds.length === 0) {
+                    return Swal.fire(
+                        "기록 없음",
+                        `${userName}님의 현재 계정과 다른 과거 기록 ID를 찾지 못했습니다.`,
+                        "info"
+                    );
+                }
+
+                const makeLabel = (oldId) => {
+                    const c = candidates[oldId].counts;
+                    return `총 ${candidates[oldId].total}건 · 출석 ${c.attendance} / 급식 ${c.meal_applications} / 부식 ${c.snacks} / 교육 ${c.education_records}`;
+                };
+
+                let selectedOldId = candidateIds[0];
+
+                // 동명이인/복수 과거 ID가 있으면 관리자가 정확한 ID를 선택하게 한다.
+                if (candidateIds.length > 1) {
+                    const inputOptions = {};
+                    candidateIds.forEach(oldId => {
+                        inputOptions[oldId] = `${oldId} — ${makeLabel(oldId)}`;
+                    });
+
+                    const result = await Swal.fire({
+                        title: `${userName} 기존 기록 선택`,
+                        html: `현재 계정: <b>${currentUserId}</b><br>생년월일: <b>${userBirth}</b><br><br>연결할 과거 계정 ID를 선택하세요.`,
+                        input: "select",
+                        inputOptions,
+                        showCancelButton: true,
+                        confirmButtonText: "선택",
+                        cancelButtonText: "취소"
+                    });
+
+                    if (!result.isConfirmed || !result.value) return;
+                    selectedOldId = result.value;
+                }
+
+                const target = candidates[selectedOldId];
+                const counts = target.counts;
+
+                const confirmResult = await Swal.fire({
+                    icon: "warning",
+                    title: `${userName} 기존 기록 연결`,
+                    html:
+                        `<div style="text-align:left; line-height:1.8;">` +
+                        `생년월일: <b>${userBirth}</b><br>` +
+                        `과거 ID: <code>${selectedOldId}</code><br>` +
+                        `현재 ID: <code>${currentUserId}</code><hr>` +
+                        `출석: <b>${counts.attendance}건</b><br>` +
+                        `급식: <b>${counts.meal_applications}건</b><br>` +
+                        `부식: <b>${counts.snacks}건</b><br>` +
+                        `교육: <b>${counts.education_records}건</b><br>` +
+                        `총 <b>${target.total}건</b>의 student_id를 현재 계정으로 변경합니다.</div>`,
+                    showCancelButton: true,
+                    confirmButtonText: "기록 연결 실행",
+                    cancelButtonText: "취소",
+                    confirmButtonColor: "#d33"
+                });
+
+                if (!confirmResult.isConfirmed) return;
+
+                showLoading(true);
+                let updated = 0;
+
+                // 선택한 과거 ID의 기록만 현재 회원 ID로 변경한다.
+                for (const item of target.records) {
+                    await updateDoc(
+                        doc(db, item.collectionName, item.docId),
+                        { student_id: currentUserId }
+                    );
+                    updated += 1;
+                }
+
+                showLoading(false);
+                await Swal.fire(
+                    "복구 완료",
+                    `${userName}님의 기존 기록 ${updated}건을 현재 계정에 연결했습니다.`,
+                    "success"
+                );
+                loadAllUsersAndApps();
+
+            } catch (e) {
+                showLoading(false);
+                console.error("기존 기록 연결 실패:", e);
+                Swal.fire(
+                    "복구 실패",
+                    "기록 연결 중 오류가 발생했습니다. 콘솔 오류를 확인해주세요.",
+                    "error"
+                );
+            }
+        };
+
         window.changeStore = async (docId, newStore) => { showLoading(true); try { await updateDoc(doc(db, "meal_applications", docId), { store_name: newStore, status: "approved" }); loadAllUsersAndApps(); } catch(e) { Swal.fire("오류", "변경 실패", "error"); } showLoading(false); };
         window.forceApprove = async (userId, userName, storeName) => { if(confirm(`${userName}님에게 [${storeName}] 식사권을 발급하시겠습니까?`)) { await addDoc(collection(db, "meal_applications"), { student_id: userId, student_name: userName, store_name: storeName, status: "approved", date: getTodayStr(), activity: "관리자승인", timestamp: Timestamp.now(), is_settled: false }); loadAllUsersAndApps(); } };
 
