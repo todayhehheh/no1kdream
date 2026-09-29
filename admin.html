@@ -38,7 +38,11 @@
         .badge-blue { background: #e7f5ff; color: #1971c2; }
         .badge-green { background: #ebfbee; color: #2f9e44; }
         
-        .store-toggles { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+        .store-toggles { display: flex; gap: 4px; justify-content: center; flex-wrap: nowrap; white-space: nowrap; }
+        .account-actions, .manage-actions { display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:nowrap; white-space:nowrap; }
+        #tab-users table { table-layout: fixed; }
+        #tab-users th, #tab-users td { padding-left:6px; padding-right:6px; }
+        #tab-users .btn-small { padding:6px 8px; margin:0; font-size:12px; white-space:nowrap; }
         .toggle-btn { padding: 6px 8px; border: 1px solid #dee2e6; background: white; color: #adb5bd; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; margin-bottom: 2px; }
         .toggle-btn:hover { background: #f8f9fa; }
         
@@ -224,7 +228,7 @@
     <script type="module">
         import { db, collection, getDocs, getDoc, setDoc, query, where, orderBy, updateDoc, addDoc, deleteDoc, doc, Timestamp } from "./js/firebase-config.js";
 
-        const ADMIN_PW = "1388";
+        const ADMIN_PW = "1388@@";
         const showLoading = (show) => { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
         
         // 날짜 포맷 함수
@@ -355,7 +359,7 @@
                         buttonsHtml = `<div class="store-toggles"><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '달인보쌈')">달인</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '미스테리분식')">미스테리</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '연김밥')">연김밥</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '동일로즉석떡볶이')">떡볶이</button><button class="toggle-btn" onclick="forceApprove('${userId}', '${u.name}', '우리동네 첫끼')">첫끼</button></div>`;
                         if(completedCount > 0) statusText = `<span class="badge badge-green">완료 (${completedCount})</span>`;
                     }
-                    tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></td><td><button class="btn-small btn-green" onclick="relinkOldRecords('${userId}', '${u.name}', '${u.birth}')" style="margin-bottom:4px;">기록연결</button><br><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td><div style="font-weight:bold;">${u.name}</div><div style="font-size:12px; color:#888;">${u.birth}</div></td><td>${statusText}</td><td>${buttonsHtml}</td><td><div class="account-actions"><button class="btn-small" onclick="viewPw('${u.password}')">비번</button><button class="btn-small btn-blue" onclick="changePw('${userId}')">변경</button></div></td><td><div class="manage-actions"><button class="btn-small btn-green" onclick="relinkOldRecords('${userId}', '${u.name}', '${u.birth}')">기록연결</button><button class="btn-small btn-red" onclick="deleteUser('${userId}', '${u.name}')">삭제</button></div></td></tr>`;
                 });
             } catch(e) { console.error(e); } showLoading(false);
         };
