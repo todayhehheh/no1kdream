@@ -156,7 +156,10 @@
         .meal-card-btn:hover:not(:disabled) {
             border-color: var(--primary); box-shadow: 0 4px 15px rgba(108, 92, 231, 0.15); transform: translateX(5px);
         }
-        .meal-card-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #F8F9FA; }
+        .meal-card-btn:disabled { opacity: 0.65; cursor: not-allowed; background: #E9ECEF; border-color: #CED4DA; }
+        .meal-card-btn:disabled .meal-img-box { filter: grayscale(1); opacity: 0.55; }
+        .meal-card-btn:disabled .meal-name,
+        .meal-card-btn:disabled .meal-desc { color: #ADB5BD; }
         
         .meal-img-box {
             width: 100px; 
@@ -273,7 +276,7 @@
                         </div>
                     </button>
 
-                    <button class="meal-card-btn" onclick="openCombinedModal('meal', '미스테리분식')">
+                    <button class="meal-card-btn" disabled aria-disabled="true" title="현재 이용 불가">
                         <div class="meal-img-box" style="background-image: url('https://cdn.e2news.com/news/photo/201511/85026_37781_5340.jpg');"></div>
                         <div class="meal-info">
                             <span class="meal-name">미스테리</span>
